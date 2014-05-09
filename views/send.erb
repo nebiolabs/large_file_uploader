@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+  <title>NEB Large File Upload Service</title>
+
+  <style type="text/css">@import url(/css/jquery.plupload.queue.css);</style>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+
+  <!-- Load plupload and all it's runtimes and finally the jQuery queue widget -->
+  <script type="text/javascript" src="/js/moxie.js"></script>
+  <script type="text/javascript" src="/js/plupload.js"></script>
+  <script type="text/javascript" src="/js/jquery.plupload.queue/jquery.plupload.queue.js"></script>
+
+  <script>
+      $(function() {
+          $("#uploader").pluploadQueue({
+              // General settings
+              runtimes : 'html5,flash',
+
+              // Flash settings
+              flash_swf_url : '/flash/Moxie.swf',
+
+              // S3 specific settings
+              url : "https://<%= $BUCKET %>.s3.amazonaws.com:443/",
+              file_name_name: false, // Custom option to our fork to remove file_name_name
+              multipart: true,
+              multipart_params : {
+                  // Dummy filename to ensure the field is sent in HTML just like Flash
+                  // This allow to have a consistent AWS policy for both HTML and Flash
+                  filename: 'filename',
+                  utf8: true,
+
+                  AWSAccessKeyId: "<%= $AWS_ACCESS_KEY_ID%>",
+                  acl: "private", // See http://docs.aws.amazon.com/AmazonS3/latest/dev/ACLOverview.html#CannedACL
+                  // See Generating a policy and a signature
+                  policy: "<%= @policy %>",
+                  signature: "<%= @signature %>",
+
+                  // This is basically the resulting location of the file on S3.
+                  // See http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPOST.html#RESTObjectPOST-requests-form-fields
+                  //
+                  // WARNING : Change this to suite your needs.
+                  // You need to insert some sort of unique identifier to avoid
+                  // overriding files if they share the same filename.
+                  key: "uploads/${filename}"
+              }
+
+          });
+
+          //todo: get an uploader object
+          uploader.bind('UploadComplete', function(up, files){
+              //todo: post a message to /notifications
+          });
+      });
+  </script>
+</head>
+
+<body>
+Please upload your files here.
+A confirmation email will be sent to you and to <%= @sender_email %> when the upload has completed.
+Your files will be retained for <%= @keep_days %> days.
+<form>
+  <div id="uploader"></div>
+</form>
+</body>
+</html>
