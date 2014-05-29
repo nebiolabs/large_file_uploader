@@ -1,29 +1,47 @@
-NEB File Upload Service:
 
-Enter the following information to generate a URL to send to externally.
-Any recipient will be able to upload files for the specified time period.
-You and the recpient will receive and email notification upon successful upload.
-<form>
-  <label>Sender email address<input id="sender_email" type="text"/></label>
-  <label>Recipient email address<input id="destination_email" type="text"/></label>
-  <label>Allow uploads for <input id="allow_upload_days" type="text" value="30"/>days</label>
-  <label>Keep uploads for <input id="keep_file_days" type="text" value="30"/>days</label>
+<div class="container theme-showcase" role="main">
+  <div>
+  <h1>
+    NEB File Upload Service:
+  </h1>
 
-  <label>Maximum file size:
-    <select id="maximum_file_size">
-      <option>100MB</option>
-      <option>1GB</option>
-      <option>10GB</option>
-      <option>100GB</option>
-      <option>1TB</option>
-    </select>
-  </label>
-  <input type="submit" value="Create Upload Key" />
-  <!-- todo: do an ajax request the display the upload key, format it and put in the upload key box -->
-
-  <div id="upload_key">
-    Upload Key : <input type="text" value="Not created yet" label="Paste this URL into an email to the uploader"/> <%= clipboard_link %>
+  <p>
+    Enter the following information to generate a URL to send to externally.
+    Any recipient will be able to upload files for the specified time period.
+    You and the recipient will receive an email notification upon successful upload.
+  </p>
   </div>
 
+  <div class="row">
 
-</form>
+
+    <form class="form-horizontal">
+      
+      <div><label>Sender email address<input id="sender_email" type="text"/></label></div>
+      <div><label>Recipient email address<input id="destination_email" type="text"/></label></div>
+      <div><label>Allow uploads for <input id="allow_upload_days" type="text" value="30"/>days</label></div>
+      <div><label>Keep uploads for <input id="keep_file_days" type="text" value="30"/>days</label></div>
+
+      <div>
+      <label>Maximum file size:
+        <select id="maximum_file_size">
+          <option>100MB</option>
+          <option>1GB</option>
+          <option>10GB</option>
+          <option>100GB</option>
+          <option>1TB</option>
+        </select>
+      </label>
+      </div>
+      <input type="submit" class="btn btn-lg btn-primary" value="Create Upload Key"/>
+      <!-- todo: do an ajax request the display the upload key, format it and put in the upload key box -->
+
+      <div id="upload_key">
+        Upload Key :
+        <input type="text" value="Not created yet" label="Paste this URL into an email to the uploader"/> <%= clipboard_link '' %>
+      </div>
+
+
+    </form>
+  </div>
+</div>

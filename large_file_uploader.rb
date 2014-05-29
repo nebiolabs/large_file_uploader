@@ -48,7 +48,7 @@ def aws_signature
 end
 
 get '/' do
-  erb :index, :layout => false
+  erb :index
 end
 
 get '/uploads/new' do
