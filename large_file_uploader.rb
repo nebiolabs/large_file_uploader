@@ -6,6 +6,7 @@ require 'erb'
 require 'base64'
 require 'json'
 require 'digest/sha1'
+require 'pry'
 
 set port: 3001
 configure :production do
@@ -58,7 +59,7 @@ end
 post '/uploads' do
   source_hash = {
       dest_email: params[:destination_email],
-      sender_email: params[:destination_email],
+      sender_email: params[:sender_email],
       keep_days: params[:keep_file_days],
       max_size: params[:maximum_file_size]
   }
@@ -82,11 +83,11 @@ get '/send/:upload_key' do |upload_key|
   decipher.decrypt
   decipher.key = $AWS_SECRET
   decipher.iv = $IV
-  plain = decipher.update(upload_key) + decipher.final
-  plain_hash =  plain.split(';').inject(Hash.new){|hsh,elem| k,v = elem.split(':'); hsh[k.to_sym] = v, hsh}
+  plain = decipher.update(upload_string) + decipher.final
+
+  plain_hash =  plain.split(';').inject(Hash.new){|hsh,elem| k,v = elem.split(':'); hsh[k.to_sym] = v; hsh}
   @keep_days = plain_hash[:keep_days]
   #set up the S3 bucket for this upload, with correct expiration policy.
-
   erb :send
 end
 
