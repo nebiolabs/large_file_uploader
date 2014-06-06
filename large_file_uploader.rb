@@ -89,6 +89,7 @@ get '/send/:upload_key' do |upload_key|
 
   plain_hash =  plain.split(';').inject(Hash.new){|hsh,elem| k,v = elem.split(':'); hsh[k.to_sym] = v; hsh}
   @keep_days = plain_hash[:keep_days]
+  @sender_email = plain_hash[:sender_email]
   #set up the S3 bucket for this upload, with correct expiration policy.
   erb :send
 end

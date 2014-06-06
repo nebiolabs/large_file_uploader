@@ -1,55 +1,51 @@
+<style type="text/css">@import url(/css/jquery.plupload.queue.css);</style>
 
+<!-- Load plupload and all it's runtimes and finally the jQuery queue widget -->
+<script type="text/javascript" src="/js/moxie.js"></script>
+<script type="text/javascript" src="/js/plupload.js"></script>
+<script type="text/javascript" src="/js/jquery.plupload.queue/jquery.plupload.queue.js"></script>
 
-  <style type="text/css">@import url(/css/jquery.plupload.queue.css);</style>
+<script>
+  $(function() {
+      $("#uploader").pluploadQueue({
+          // General settings
+          runtimes : 'html5,flash',
 
-  <!-- Load plupload and all it's runtimes and finally the jQuery queue widget -->
-  <script type="text/javascript" src="/js/moxie.js"></script>
-  <script type="text/javascript" src="/js/plupload.js"></script>
-  <script type="text/javascript" src="/js/jquery.plupload.queue/jquery.plupload.queue.js"></script>
+          // Flash settings
+          flash_swf_url : '/flash/Moxie.swf',
 
-  <script>
-      $(function() {
-          $("#uploader").pluploadQueue({
-              // General settings
-              runtimes : 'html5,flash',
+          // S3 specific settings
+          url : "https://s3.amazonaws.com/<%= $BUCKET %>/",
+          file_name_name: false,
+          multipart: true,
+          multipart_params : {
+              // Dummy filename to ensure the field is sent in HTML just like Flash
+              // This allow to have a consistent AWS policy for both HTML and Flash
+              Filename: 'filename',
+              utf8: true,
+              AWSAccessKeyId: "<%= $AWS_ACCESS_KEY_ID %>",
+              acl: "private", // See http://docs.aws.amazon.com/AmazonS3/latest/dev/ACLOverview.html#CannedACL
+              // See Generating a policy and a signature
+              policy: "<%= aws_policy %>",
+              signature: "<%= aws_signature %>",
 
-              // Flash settings
-              flash_swf_url : '/flash/Moxie.swf',
-
-              // S3 specific settings
-              url : "https://s3.amazonaws.com/<%= $BUCKET %>/",
-              file_name_name: false,
-              multipart: true,
-              multipart_params : {
-                  // Dummy filename to ensure the field is sent in HTML just like Flash
-                  // This allow to have a consistent AWS policy for both HTML and Flash
-                  Filename: 'filename',
-                  utf8: true,
-                  AWSAccessKeyId: "<%= $AWS_ACCESS_KEY_ID %>",
-                  acl: "private", // See http://docs.aws.amazon.com/AmazonS3/latest/dev/ACLOverview.html#CannedACL
-                  // See Generating a policy and a signature
-                  policy: "<%= aws_policy %>",
-                  signature: "<%= aws_signature %>",
-
-                  // This is basically the resulting location of the file on S3.
-                  // See http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPOST.html#RESTObjectPOST-requests-form-fields
-                  //
-                  // WARNING : Change this to suite your needs.
-                  // You need to insert some sort of unique identifier to avoid
-                  // overriding files if they share the same filename.
-                  key: "uploads/${filename}"
-              }
-          });
-
-          //todo: get an uploader object
-//          uploader.bind('UploadComplete', function(up, files){
-              //todo: post a message to /notifications
-//          });
+              // This is basically the resulting location of the file on S3.
+              // See http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPOST.html#RESTObjectPOST-requests-form-fields
+              //
+              // WARNING : Change this to suite your needs.
+              // You need to insert some sort of unique identifier to avoid
+              // overriding files if they share the same filename.
+              key: "uploads/${filename}"
+          }
       });
-  </script>
-</head>
 
-<body>
+      //todo: get an uploader object
+//          uploader.bind('UploadComplete', function(up, files){
+          //todo: post a message to /notifications
+//          });
+  });
+</script>
+
 Please upload your files here.
 A confirmation email will be sent to you and to <%= @sender_email %> when the upload has completed.
 Your files will be retained for <%= @keep_days %> days.
