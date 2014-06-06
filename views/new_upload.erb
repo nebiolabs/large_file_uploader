@@ -15,16 +15,16 @@
   <div class="row">
 
 
-    <form class="form-horizontal">
+    <form class="form-horizontal" id="upload-form">
       
-      <div><label>Sender email address<input id="sender_email" type="text"/></label></div>
-      <div><label>Recipient email address<input id="destination_email" type="text"/></label></div>
-      <div><label>Allow uploads for <input id="allow_upload_days" type="text" value="30"/>days</label></div>
-      <div><label>Keep uploads for <input id="keep_file_days" type="text" value="30"/>days</label></div>
+      <div><label>Sender email address<input id="sender_email" name='sender_email' type="text"/></label></div>
+      <div><label>Recipient email address<input id="destination_email" name="destination_email" type="text"/></label></div>
+      <div><label>Allow uploads for <input id="allow_upload_days" name="allow_upload_days" type="text" value="30"/>days</label></div>
+      <div><label>Keep uploads for <input id="keep_file_days" name="keep_file_days" type="text" value="30"/>days</label></div>
 
       <div>
       <label>Maximum file size:
-        <select id="maximum_file_size">
+        <select id="maximum_file_size" name="max_file_size">
           <option>100MB</option>
           <option>1GB</option>
           <option>10GB</option>
@@ -36,12 +36,30 @@
       <input type="submit" class="btn btn-lg btn-primary" value="Create Upload Key"/>
       <!-- todo: do an ajax request the display the upload key, format it and put in the upload key box -->
 
-      <div id="upload_key">
+      <div>
         Upload Key :
-        <input type="text" value="Not created yet" label="Paste this URL into an email to the uploader"/> <%= clipboard_link '' %>
+        <input id="upload_key" type="text" value="Not created yet" label="Paste this URL into an email to the uploader"/> <%= clipboard_link '' %>
       </div>
 
 
     </form>
   </div>
 </div>
+
+<script type="text/javascript">
+    $(document).ready(function(e) {
+        $("#upload-form").submit(function(e) {
+            e.preventDefault();
+            var form_data = $(this).serialize();
+
+            $.ajax({
+                url: '/uploads',
+                type: 'POST',
+                data: form_data,
+                success: function(data){
+                    $('#upload_key').val(data.upload_key);
+                }
+            });
+        });
+    });
+</script>
