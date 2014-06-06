@@ -7,6 +7,8 @@ require 'base64'
 require 'json'
 require 'digest/sha1'
 require 'pry'
+require 'dotenv'
+Dotenv.load
 
 set port: 3001
 configure :production do
@@ -14,11 +16,11 @@ configure :production do
 end
 
 $ACL = 'private' # Change this according to your needs
-$BUCKET = 'NEB-Upload'
-$AWS_SECRET = 'AKIAIAYAPPAYJO5AS5GA'    #todo: get this from aaron
-$AWS_ACCESS_KEY_ID = 'AKIAIAYAPPAYJO5AS5GA'
-$IV = 'T\xE0\xAEW<mUi\xE3\x93q\xB2\t\x9C\xA0\x88' #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
-$CIPHER = 'AES-128-CBC'
+$BUCKET = ENV['BUCKET']
+$AWS_SECRET = ENV['AWS_SECRET']    #todo: get this from aaron
+$AWS_ACCESS_KEY_ID = ENV['AWS_ACCESS_KEY_ID']
+$IV = ENV['IV'] #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
+$CIPHER = ENV['CIPHER']
 
 def aws_policy
   conditions = [

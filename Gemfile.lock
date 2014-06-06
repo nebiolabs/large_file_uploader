@@ -3,7 +3,7 @@ GEM
   specs:
     coderay (1.1.0)
     method_source (0.8.2)
-    newrelic_rpm (3.8.0.218)
+    newrelic_rpm (3.8.1.221)
     pry (0.9.12.6)
       coderay (~> 1.0)
       method_source (~> 0.8)
