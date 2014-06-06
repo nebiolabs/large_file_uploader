@@ -45,7 +45,7 @@ def aws_signature
   Base64.encode64(
       OpenSSL::HMAC.digest(
           OpenSSL::Digest.new('sha1'),
-          $AWS_SECRET, policy
+          $AWS_SECRET, aws_policy
       )
   ).gsub("\n","")
 end

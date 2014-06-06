@@ -17,20 +17,18 @@
               flash_swf_url : '/flash/Moxie.swf',
 
               // S3 specific settings
-              url : "https://<%= $BUCKET %>.s3.amazonaws.com:443/",
-              file_name_name: false, // Custom option to our fork to remove file_name_name
+              url : "https://s3.amazonaws.com/<%= $BUCKET %>/",
               multipart: true,
               multipart_params : {
                   // Dummy filename to ensure the field is sent in HTML just like Flash
                   // This allow to have a consistent AWS policy for both HTML and Flash
-                  filename: 'filename',
+                  Filename: 'filename',
                   utf8: true,
-
-                  AWSAccessKeyId: "<%= $AWS_ACCESS_KEY_ID%>",
+                  AWSAccessKeyId: "<%= $AWS_ACCESS_KEY_ID %>",
                   acl: "private", // See http://docs.aws.amazon.com/AmazonS3/latest/dev/ACLOverview.html#CannedACL
                   // See Generating a policy and a signature
-                  policy: "<%= @policy %>",
-                  signature: "<%= @signature %>",
+                  policy: "<%= aws_policy %>",
+                  signature: "<%= aws_signature %>",
 
                   // This is basically the resulting location of the file on S3.
                   // See http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPOST.html#RESTObjectPOST-requests-form-fields
@@ -40,13 +38,12 @@
                   // overriding files if they share the same filename.
                   key: "uploads/${filename}"
               }
-
           });
 
           //todo: get an uploader object
-          uploader.bind('UploadComplete', function(up, files){
+//          uploader.bind('UploadComplete', function(up, files){
               //todo: post a message to /notifications
-          });
+//          });
       });
   </script>
 </head>
