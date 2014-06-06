@@ -24,7 +24,7 @@
 
       <div>
       <label>Maximum file size:
-        <select id="maximum_file_size" name="max_file_size">
+        <select id="max_file_size" name="max_file_size">
           <option>100MB</option>
           <option>1GB</option>
           <option>10GB</option>
@@ -51,7 +51,6 @@
         $("#upload-form").submit(function(e) {
             e.preventDefault();
             var form_data = $(this).serialize();
-
             $.ajax({
                 url: '/uploads',
                 type: 'POST',

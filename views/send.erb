@@ -9,11 +9,13 @@
   $(function() {
       $("#uploader").pluploadQueue({
           // General settings
-          runtimes : 'html5,flash',
+          runtimes : 'html5',
 
           // Flash settings
           flash_swf_url : '/flash/Moxie.swf',
-
+          chunk_size: '5mb',
+          max_file_size: '<%= @max_file_size %>',
+          max_retries: 3,
           // S3 specific settings
           url : "https://s3.amazonaws.com/<%= $BUCKET %>/",
           file_name_name: false,

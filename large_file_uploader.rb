@@ -63,7 +63,7 @@ post '/uploads' do
       dest_email: params[:destination_email],
       sender_email: params[:sender_email],
       keep_days: params[:keep_file_days],
-      max_size: params[:maximum_file_size]
+      max_file_size: params[:max_file_size]
   }
   source_string = source_hash.map{|k,v| "#{k}:#{v}"}.join(';')
 
@@ -90,6 +90,7 @@ get '/send/:upload_key' do |upload_key|
   plain_hash =  plain.split(';').inject(Hash.new){|hsh,elem| k,v = elem.split(':'); hsh[k.to_sym] = v; hsh}
   @keep_days = plain_hash[:keep_days]
   @sender_email = plain_hash[:sender_email]
+  @max_file_size = plain_hash[:max_file_size]
   #set up the S3 bucket for this upload, with correct expiration policy.
   erb :send
 end
