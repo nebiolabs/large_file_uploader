@@ -18,6 +18,7 @@
 
               // S3 specific settings
               url : "https://s3.amazonaws.com/<%= $BUCKET %>/",
+              file_name_name: false,
               multipart: true,
               multipart_params : {
                   // Dummy filename to ensure the field is sent in HTML just like Flash
