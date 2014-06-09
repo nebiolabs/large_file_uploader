@@ -8,6 +8,8 @@ require 'json'
 require 'digest/sha1'
 require 'pry'
 require 'dotenv'
+require 'aws-sdk'
+
 Dotenv.load
 
 set port: 3001
@@ -17,38 +19,10 @@ end
 
 $ACL = 'private' # Change this according to your needs
 $BUCKET = ENV['BUCKET']
-$AWS_SECRET = ENV['AWS_SECRET']    #todo: get this from aaron
+$AWS_SECRET = ENV['AWS_SECRET_ACCESS_KEY']    #todo: get this from aaron
 $AWS_ACCESS_KEY_ID = ENV['AWS_ACCESS_KEY_ID']
 $IV = ENV['IV'] #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
 $CIPHER = ENV['CIPHER']
-
-def aws_policy
-  conditions = [
-      ["starts-with", "$utf8", ""],
-      # Change this path if you need, but adjust the javascript config
-      ["starts-with", "$key", "uploads"],
-      ["starts-with", "$filename", ""],
-      { "bucket" => $BUCKET },
-      { "acl" => $ACL }
-  ]
-
-  policy = {
-      # Valid for 3 hours. Change according to your needs
-      'expiration' => (Time.now.utc + 3600 * 3).iso8601,
-      'conditions' => conditions
-  }
-
-  Base64.encode64(JSON.dump(policy)).gsub("\n","")
-end
-
-def aws_signature
-  Base64.encode64(
-      OpenSSL::HMAC.digest(
-          OpenSSL::Digest.new('sha1'),
-          $AWS_SECRET, aws_policy
-      )
-  ).gsub("\n","")
-end
 
 get '/' do
   erb :index
@@ -102,7 +76,6 @@ post '/notifications' do
 end
 
 post '/uploads_temp' do
-  # binding.pry
   data = params[:file][:tempfile]
   filename = params[:filename]
 
@@ -114,6 +87,17 @@ post '/uploads_temp' do
   end
 
   200
+end
+
+post '/amazon_upload' do
+  filename = params[:filename]
+  upload_path = "uploads_temp/"
+
+  s3 = AWS::S3.new
+  bucket = s3.buckets[$BUCKET]
+  bucket.objects[filename].write(:file => upload_path + filename, :multipart_threshold => 100 * 1024 * 1024)
+
+  File.delete(upload_path + filename)
 end
 
 def clipboard_link(text, bgcolor='#FFFFFF')

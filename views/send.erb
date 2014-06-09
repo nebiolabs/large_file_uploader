@@ -7,8 +7,9 @@
 
 <script>
   $(function() {
+    var el = $("#uploader");
 
-    $("#uploader").pluploadQueue({
+    el.pluploadQueue({
       // General settings
       runtimes : 'html5',
       // Flash settings
@@ -22,9 +23,21 @@
       multipart: true
     });
 
-    var uploader = $("#uploader").pluploadQueue();
+    var uploader = el.pluploadQueue();
+
     uploader.bind('BeforeUpload', function(up, file) {
       up.settings.multipart_params = {filename : file.name};
+    });
+
+    uploader.bind('FileUploaded', function(up, file) {
+      $.ajax({
+          url: '/amazon_upload',
+          type: 'POST',
+          data: {filename : file.name},
+            success: function(data){
+                return false
+            }
+        });
     });
   });
 </script>
