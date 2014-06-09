@@ -99,7 +99,21 @@ post '/notifications' do
   message = params[:message]
   #todo: validate the hashed message saying that the upload is complete
   #todo: send email to recipient and sender confirming upload
+end
 
+post '/uploads_temp' do
+  # binding.pry
+  data = params[:file][:tempfile]
+  filename = params[:filename]
+
+  upload_path = "uploads_temp/"
+  mode = "ab"
+
+  File.open(upload_path + filename, mode) do |file|
+    file.write(data.read)
+  end
+
+  200
 end
 
 def clipboard_link(text, bgcolor='#FFFFFF')
