@@ -9,6 +9,7 @@ require 'digest/sha1'
 require 'pry'
 require 'dotenv'
 require 'aws-sdk'
+require 'pony'
 
 Dotenv.load
 
@@ -52,7 +53,6 @@ post '/uploads' do
 end
 
 get '/send/:upload_key' do |upload_key|
-  #parses the hashed structure containing the sender, expiration, etc
   upload_string = Base64.urlsafe_decode64(upload_key)
 
   decipher = OpenSSL::Cipher.new $CIPHER
@@ -65,7 +65,8 @@ get '/send/:upload_key' do |upload_key|
   @keep_days = plain_hash[:keep_days]
   @sender_email = plain_hash[:sender_email]
   @max_file_size = plain_hash[:max_file_size]
-  #set up the S3 bucket for this upload, with correct expiration policy.
+  @dest_email = plain_hash[:dest_email]
+
   erb :send
 end
 
@@ -98,6 +99,27 @@ post '/amazon_upload' do
   bucket.objects[filename].write(:file => upload_path + filename, :multipart_threshold => 100 * 1024 * 1024)
 
   File.delete(upload_path + filename)
+
+  send_email(params[:sender_email])
+  send_email(params[:dest_email])
+end
+
+def send_email(address)
+  Pony.mail({
+      :to => 'ksun@brookeside.com',
+      :subject => 'testing',
+      :body => 'Email Ready.',
+      :via => :smtp,
+      :via_options => {
+          :address              => 'smtp.gmail.com',
+          :port                 => '587',
+          :enable_starttls_auto => true,
+          :user_name            => ENV['EMAIL_ADDRESS'],
+          :password             => ENV['EMAIL_PASSWORD'],
+          :authentication       => :plain, # :plain, :login, :cram_md5, no auth by default
+          :domain               => "gmail.com" # the HELO domain provided by the client to the server
+      }
+  })
 end
 
 def clipboard_link(text, bgcolor='#FFFFFF')

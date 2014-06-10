@@ -33,7 +33,10 @@
       $.ajax({
           url: '/amazon_upload',
           type: 'POST',
-          data: {filename : file.name},
+          data: {
+            filename : file.name,
+            sender_email : '<%= @sender_email %>',
+            dest_email : '<%= @dest_email %>'},
             success: function(data){
                 return false
             }
