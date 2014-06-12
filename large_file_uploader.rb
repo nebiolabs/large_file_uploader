@@ -10,6 +10,7 @@ require 'pry'
 require 'dotenv'
 require 'aws-sdk'
 require 'pony'
+require_relative 'models/uploader'
 
 Dotenv.load
 
@@ -18,12 +19,10 @@ configure :production do
   require 'newrelic_rpm'
 end
 
-$ACL = 'private' # Change this according to your needs
-$BUCKET = ENV['BUCKET']
 $AWS_SECRET = ENV['AWS_SECRET_ACCESS_KEY']    #todo: get this from aaron
-$AWS_ACCESS_KEY_ID = ENV['AWS_ACCESS_KEY_ID']
 $IV = ENV['IV'] #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
 $CIPHER = ENV['CIPHER']
+$CHUNK_SIZE = (5 * 1024 * 1024)#in bytes
 
 get '/' do
   erb :index
@@ -91,17 +90,12 @@ post '/uploads_temp' do
 end
 
 post '/amazon_upload' do
-  filename = params[:filename]
-  upload_path = "uploads_temp/"
-
-  s3 = AWS::S3.new
-  bucket = s3.buckets[$BUCKET]
-  bucket.objects[filename].write(:file => upload_path + filename, :multipart_threshold => 100 * 1024 * 1024)
-
-  File.delete(upload_path + filename)
-
-  send_email(params[:sender_email])
-  send_email(params[:dest_email])
+  uploader = Uploader.new(params)
+  uploader.upload_to_amazon
+  # send_email(params[:sender_email])
+  # send_email(params[:dest_email])
+  content_type :json
+  {:id => uploader.upload_id}.to_json
 end
 
 def send_email(address)

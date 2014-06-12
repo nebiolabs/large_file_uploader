@@ -14,11 +14,11 @@
       runtimes : 'html5',
       // Flash settings
       flash_swf_url : '/flash/Moxie.swf',
-      chunk_size: '5mb',
+      chunk_size: '<%= $CHUNK_SIZE %>',
       max_file_size: '<%= @max_file_size %>',
       max_retries: 3,
       // S3 specific settings
-      url : "/uploads_temp",
+      url : "/amazon_upload",
       file_name_name: false,
       multipart: true
     });
@@ -29,19 +29,27 @@
       up.settings.multipart_params = {filename : file.name};
     });
 
-    uploader.bind('FileUploaded', function(up, file) {
-      $.ajax({
-          url: '/amazon_upload',
-          type: 'POST',
-          data: {
-            filename : file.name,
-            sender_email : '<%= @sender_email %>',
-            dest_email : '<%= @dest_email %>'},
-            success: function(data){
-                return false
-            }
-        });
+    uploader.bind('ChunkUploaded', function(up, file, info) {
+        up.settings.multipart_params = {
+            filename: file.name,
+            upload_id: JSON.parse(info.response).id
+        };
+      // do some chunk related stuff
     });
+
+//    uploader.bind('FileUploaded', function(up, file) {
+//      $.ajax({
+//          url: '/notifications',
+//          type: 'POST',
+//          data: {
+//            filename : file.name,
+//            sender_email : '<%= @sender_email %>',
+//            dest_email : '<%= @dest_email %>'},
+//            success: function(data){
+//                return false
+//            }
+//        });
+//    });
   });
 </script>
 
