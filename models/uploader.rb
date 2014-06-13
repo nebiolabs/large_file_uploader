@@ -5,6 +5,7 @@ class Uploader
     @bucket = AWS::S3.new.buckets[ENV['BUCKET']]
     @aws_obj = @bucket.objects[params[:filename]]
     @upload_id = params[:upload_id]
+    @old_part_number = params[:part_number].to_i #nil turns to 0
     @total = params[:total]
     @offset = params[:offset]
   end
@@ -17,6 +18,10 @@ class Uploader
     (@total.to_i - @offset.to_i) < $CHUNK_SIZE
   end
 
+  def part_number
+    @old_part_number + 1
+  end
+
   def upload_id
     requires_multipart_upload? ? upload.id : ''
   end
@@ -24,10 +29,10 @@ class Uploader
   def upload_to_amazon
     if requires_multipart_upload?
       if last_chunk?
-        upload.add_part(@data)
+        upload.add_part(@data, part_number: part_number)
         upload.complete(:remote_parts)
       else
-        upload.add_part(@data)
+        upload.add_part(@data, part_number: part_number)
       end
     else
       @bucket.objects[params[:filename]].write(Pathname.new(data))

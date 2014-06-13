@@ -22,7 +22,7 @@ end
 $AWS_SECRET = ENV['AWS_SECRET_ACCESS_KEY']    #todo: get this from aaron
 $IV = ENV['IV'] #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
 $CIPHER = ENV['CIPHER']
-$CHUNK_SIZE = (5 * 1024 * 1024)#in bytes
+$CHUNK_SIZE = (100 * 1024 * 1024)#in bytes
 
 get '/' do
   erb :index
@@ -70,6 +70,8 @@ get '/send/:upload_key' do |upload_key|
 end
 
 post '/notifications' do
+  # send_email(params[:sender_email])
+  # send_email(params[:dest_email])
   message = params[:message]
   #todo: validate the hashed message saying that the upload is complete
   #todo: send email to recipient and sender confirming upload
@@ -92,10 +94,8 @@ end
 post '/amazon_upload' do
   uploader = Uploader.new(params)
   uploader.upload_to_amazon
-  # send_email(params[:sender_email])
-  # send_email(params[:dest_email])
   content_type :json
-  {:id => uploader.upload_id}.to_json
+  {id: uploader.upload_id, part_number: uploader.part_number }.to_json
 end
 
 def send_email(address)
