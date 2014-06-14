@@ -3,7 +3,8 @@ class Uploader
   def initialize(params)
     @data = params[:file][:tempfile]
     @bucket = AWS::S3.new.buckets[ENV['BUCKET']]
-    @aws_obj = @bucket.objects[params[:filename]]
+    @filename = params[:filename]
+    @aws_obj = @bucket.objects[@filename]
     @upload_id = params[:upload_id]
     @old_part_number = params[:part_number].to_i #nil turns to 0
     @total = params[:total]
@@ -35,7 +36,7 @@ class Uploader
         upload.add_part(@data, part_number: part_number)
       end
     else
-      @bucket.objects[params[:filename]].write(Pathname.new(data))
+      @bucket.objects[@filename].write(Pathname.new(@data))
     end
   end
 
