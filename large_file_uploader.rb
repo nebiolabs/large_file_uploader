@@ -70,11 +70,10 @@ get '/send/:upload_key' do |upload_key|
 end
 
 post '/notifications' do
-  # send_email(params[:sender_email])
-  # send_email(params[:dest_email])
-  message = params[:message]
+  send_email(params[:sender_email])
+  send_email(params[:dest_email])
+  # message = params[:message]
   #todo: validate the hashed message saying that the upload is complete
-  #todo: send email to recipient and sender confirming upload
 end
 
 post '/uploads_temp' do
@@ -100,7 +99,7 @@ end
 
 def send_email(address)
   Pony.mail({
-      :to => 'ksun@brookeside.com',
+      :to => address,
       :subject => 'testing',
       :body => 'Email Ready.',
       :via => :smtp,
