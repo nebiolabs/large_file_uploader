@@ -24,10 +24,8 @@ $CIPHER = ENV['CIPHER']
 
 def aws_policy
   conditions = [
-      ["starts-with", "$utf8", ""],
       # Change this path if you need, but adjust the javascript config
       ["starts-with", "$key", "uploads"],
-      ["starts-with", "$filename", ""],
       { "bucket" => $BUCKET },
       { "acl" => $ACL }
   ]
@@ -99,7 +97,6 @@ post '/notifications' do
   message = params[:message]
   #todo: validate the hashed message saying that the upload is complete
   #todo: send email to recipient and sender confirming upload
-
 end
 
 def clipboard_link(text, bgcolor='#FFFFFF')

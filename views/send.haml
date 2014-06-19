@@ -3,19 +3,20 @@ A confirmation email will be sent to you and to #{@sender_email} when the upload
 Your files will be retained for #{@keep_days} days.
 
 %form.upload-form
-  %input#files{multiple: "multiple", name: "files[]", type: "file"}/
+  %input#files{multiple: "multiple", name: "files[]", type: "file"}
   %output#list
 %script{src: "/js/underscore.js"}
 
 :javascript
   $( document ).ready(function() {
 
-    var maxFileSize = "#{@max_file_size}";
     var multipartMinSize = 5 * 1024 * 1024;
-    var bucket = "#{$BUCKET}";
-    var secretKey = "#{$AWS_SECRET}";
-    var awsPolicy = "#{aws_policy}";
-    var awsSignature = "#{aws_signature}";
+    var maxFileSize      = "#{@max_file_size}";
+    var bucket           = "#{$BUCKET}";
+    var accessKey        = "#{$AWS_ACCESS_KEY_ID}";
+    var awsPolicy        = "#{aws_policy}";
+    var awsSignature     = "#{aws_signature}";
+    var acl              = "#{$ACL}";
 
     function Uploader(){
       this.uploadForm = new UploaderForm('.upload-form');
@@ -45,36 +46,45 @@ Your files will be retained for #{@keep_days} days.
 
     function File(file){
       this.htmlFile = file;
-      this.name = this.htmlFile.name;
+      this.name = 'uploads/'+this.htmlFile.name;
       this.size = this.htmlFile.size;
-      this.fileReader = new FileReader();
+
       this.canUseMultipart = function(){
         return this.size > multipartMinSize;
       };
+
+      this.readerCallback = function(e) {
+        var fd = new FormData();
+        fd.append('key',            this.name);
+        fd.append('AWSAccessKeyId', accessKey);
+        fd.append('acl',            acl);
+        fd.append('policy',         awsPolicy);
+        fd.append('signature',      awsSignature);
+        fd.append('file',           e.target.result)
+
+        $.ajax({
+          url : 'https://s3.amazonaws.com/' + bucket + '/',
+          type: 'post',
+          data: fd,
+          processData: false,
+          contentType: false,
+          success: function(data) {
+            console.log(data);
+          }
+         });
+      }
+
+      this.readFile = function(file, onLoadCallback){
+        var reader = new FileReader();
+        reader.onload = onLoadCallback;
+        reader.readAsBinaryString(file);
+      }
+
       this.sendToAmazon = function(){
-  //      if(this.canUseMultipart()){
-          $.ajax({
-            url : 'https://s3.amazonaws.com/' + bucket + '/',
-            type: 'post',
-            crossDomain: true,
-            dataType: 'json',
-            data: {
-              key: this.name,
-              AWSAccessKeyId: secretKey,
-              acl: 'public-read',
-              policy: awsPolicy,
-              signature: awsSignature
-            },
-            crossDomain : true,
-            xhrFields: {
-              withCredentials: true
-            },
-            success:function(data) {
-              console.log('WORKS')
-            }
-          });
-  //      }
+        this.readFile(this.htmlFile, this.readerCallback)
       };
+
+      _.bindAll(this, "sendToAmazon", "readFile", "canUseMultipart", "readerCallback");
     }
 
     new Uploader();
