@@ -2,6 +2,8 @@ GEM
   remote: https://rubygems.org/
   specs:
     coderay (1.1.0)
+    haml (4.0.5)
+      tilt
     method_source (0.8.2)
     newrelic_rpm (3.8.1.221)
     pry (0.9.12.6)
@@ -22,6 +24,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  haml
   newrelic_rpm
   pry
   sinatra

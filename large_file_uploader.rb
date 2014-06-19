@@ -51,11 +51,11 @@ def aws_signature
 end
 
 get '/' do
-  erb :index
+  haml :index
 end
 
 get '/uploads/new' do
-  erb :new_upload
+  haml :new_upload
 end
 
 post '/uploads' do
@@ -92,7 +92,7 @@ get '/send/:upload_key' do |upload_key|
   @sender_email = plain_hash[:sender_email]
   @max_file_size = plain_hash[:max_file_size]
   #set up the S3 bucket for this upload, with correct expiration policy.
-  erb :send
+  haml :send
 end
 
 post '/notifications' do
