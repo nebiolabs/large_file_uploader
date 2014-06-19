@@ -17,7 +17,7 @@ end
 
 $ACL = 'private' # Change this according to your needs
 $BUCKET = ENV['BUCKET']
-$AWS_SECRET = ENV['AWS_SECRET']    #todo: get this from aaron
+$AWS_SECRET = ENV['AWS_SECRET_ACCESS_KEY']    #todo: get this from aaron
 $AWS_ACCESS_KEY_ID = ENV['AWS_ACCESS_KEY_ID']
 $IV = ENV['IV'] #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
 $CIPHER = ENV['CIPHER']
