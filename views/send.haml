@@ -6,7 +6,8 @@ Your files will be retained for #{@keep_days} days.
   %input#files{multiple: "multiple", name: "files[]", type: "file"}
   %output#list
 %script{src: "/js/underscore.js"}
-%script{src: "http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"}
+%script{src:"/js/hmac-sha1.js"}
+%script{src: "/js/enc-base64-min.js"}
 
 -#%form(action="https://#{ENV['S3_BUCKET']}.s3.amazonaws.com" method="post" enctype="multipart/form-data" class='direct-upload')
 -#  %input{type: :hidden, name: :key}
@@ -23,11 +24,11 @@ Your files will be retained for #{@keep_days} days.
     var maxFileSize      = "#{@max_file_size}";
     var bucket           = "#{$BUCKET}";
     var accessKey        = "#{$AWS_ACCESS_KEY_ID}";
+    var secretKey        = "#{$AWS_SECRET}";
     var awsPolicy        = "#{aws_policy}";
     var awsSignature     = "#{aws_signature}";
     var acl              = "#{$ACL}";
     var date             = "#{date}";
-    var awsMultipartAuth  = "#{aws_multipart_signature}";
 
     function Uploader(){
       this.uploadForm = new UploaderForm('.upload-form');
@@ -65,6 +66,7 @@ Your files will be retained for #{@keep_days} days.
         return this.size > multipartMinSize;
       };
       this.date = new Date().toUTCString()
+      this.uploadId = ''
 
       this.setFormData = function(e) {
         var fd = new FormData();
@@ -115,22 +117,37 @@ Your files will be retained for #{@keep_days} days.
       };
 
       this.initiateMultipartUpload = function(){
+        var auth = this.multipartAuth();
+        var uploadId = this.uploadId;
         $.ajax({
           url : 'https://' + bucket + '.s3.amazonaws.com/'+this.name+'?uploads ',
           type: 'post',
           dataType: 'xml',
           beforeSend: function (xhr) {
             xhr.setRequestHeader("x-amz-date", date)
-            xhr.setRequestHeader("Authorization", awsMultipartAuth);
+            xhr.setRequestHeader("Authorization", auth);
           },
           success: function(data, textStatus, jqXHR ) {
-
+            uploadId = data.getElementsByTagName("UploadId")[0].innerHTML;
           }
         })
       }
 
+      this.multipartAuth = function(){
+        var stringToSign = 'POST' + "\n" +
+          "\n" +
+          "\n" +
+          "\n" +
+          'x-amz-date:'+date+"\n" +
+          '/'+bucket+'/'+this.name+'?uploads';
+
+        var crypto = CryptoJS.HmacSHA1(stringToSign, secretKey).toString(CryptoJS.enc.Base64);
+        var auth = 'AWS'+' '+accessKey+':'+crypto
+        return auth
+      }
+
       _.bindAll(this, "sendToAmazon", "readEntireFile", "canUseMultipart", "setFormData");
-      _.bindAll(this, "sendFullFileToAmazon", "readBlobs", "initiateMultipartUpload");
+      _.bindAll(this, "sendFullFileToAmazon", "readBlobs", "initiateMultipartUpload", "multipartAuth");
     }
 
     new Uploader();

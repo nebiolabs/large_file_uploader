@@ -41,41 +41,16 @@ def aws_policy
 end
 
 def aws_signature
-  signature(aws_policy)
-end
-
-def aws_multipart_signature
-  # will time out
-
-  string_to_sign = 'POST' + "\n" +
-      "\n" +
-      "\n" +
-      "\n" +
-      'x-amz-date:' + date + "\n" +
-  '/' + $BUCKET + '/learn_fog.tar.gz?uploads'
-
-  "AWS #{$AWS_ACCESS_KEY_ID}:#{signature(string_to_sign)}"
-end
-
-def signature(policy)
   Base64.encode64(
       OpenSSL::HMAC.digest(
           OpenSSL::Digest.new('sha1'),
-          $AWS_SECRET, policy
+          $AWS_SECRET, aws_policy
       )
   ).gsub("\n","")
 end
 
 def date
   (Time.now.utc).strftime('%a, %e %b %Y %H:%M:%S %z')
-end
-
-def multipart_policy
-  'POST' + "\n" +    "\n" +
-  'text/html' + "\n" +
-  "\n" +
-  'x-amz-date:' + date + "\n" +
-  '/' + $bucket + '/?upload'
 end
 
 get '/' do
@@ -155,3 +130,6 @@ def clipboard_link(text, bgcolor='#FFFFFF')
       </object>
   EOF
 end
+
+# klfxaNDxBuZ.Ct6diz6y6BBpwS0KEfNiC6Ee5LawxF9TksUW21WXJNz.4Sv2znPQ5QdJXGD4Db.zbaL69ewb0w--
+# vLLodADjvX.xh_H7R_O6Hv_htmE_0TR4bgT6EL9zM_ueZb52wB08PJRFtoFI98PuM5kiCEjIAKDMmD5S.0nslg--
