@@ -2,12 +2,13 @@
 #set :bind, '0.0.0.0'
 
 require 'sinatra'
-require 'erb'
+require 'haml'
 require 'base64'
 require 'json'
 require 'digest/sha1'
 require 'pry'
 require 'dotenv'
+
 Dotenv.load
 
 set port: 3001
@@ -15,8 +16,8 @@ configure :production do
   require 'newrelic_rpm'
 end
 
-$ACL = 'private' # Change this according to your needs
-$BUCKET = ENV['BUCKET']
+$ACL = 'public-read-write' # remember to change back private
+$BUCKET = ENV['BUCKET'] # bucket cannot be uppercase
 $AWS_SECRET = ENV['AWS_SECRET_ACCESS_KEY']    #todo: get this from aaron
 $AWS_ACCESS_KEY_ID = ENV['AWS_ACCESS_KEY_ID']
 $IV = ENV['IV'] #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
@@ -25,7 +26,7 @@ $CIPHER = ENV['CIPHER']
 def aws_policy
   conditions = [
       # Change this path if you need, but adjust the javascript config
-      ["starts-with", "$key", "uploads"],
+      ["starts-with", "$key", ''],
       { "bucket" => $BUCKET },
       { "acl" => $ACL }
   ]
@@ -40,12 +41,41 @@ def aws_policy
 end
 
 def aws_signature
+  signature(aws_policy)
+end
+
+def aws_multipart_signature
+  # will time out
+
+  string_to_sign = 'POST' + "\n" +
+      "\n" +
+      "\n" +
+      "\n" +
+      'x-amz-date:' + date + "\n" +
+  '/' + $BUCKET + '/learn_fog.tar.gz?uploads'
+
+  "AWS #{$AWS_ACCESS_KEY_ID}:#{signature(string_to_sign)}"
+end
+
+def signature(policy)
   Base64.encode64(
       OpenSSL::HMAC.digest(
           OpenSSL::Digest.new('sha1'),
-          $AWS_SECRET, aws_policy
+          $AWS_SECRET, policy
       )
   ).gsub("\n","")
+end
+
+def date
+  (Time.now.utc).strftime('%a, %e %b %Y %H:%M:%S %z')
+end
+
+def multipart_policy
+  'POST' + "\n" +    "\n" +
+  'text/html' + "\n" +
+  "\n" +
+  'x-amz-date:' + date + "\n" +
+  '/' + $bucket + '/?upload'
 end
 
 get '/' do
@@ -125,5 +155,3 @@ def clipboard_link(text, bgcolor='#FFFFFF')
       </object>
   EOF
 end
-
-

@@ -6,6 +6,15 @@ Your files will be retained for #{@keep_days} days.
   %input#files{multiple: "multiple", name: "files[]", type: "file"}
   %output#list
 %script{src: "/js/underscore.js"}
+%script{src: "http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"}
+
+-#%form(action="https://#{ENV['S3_BUCKET']}.s3.amazonaws.com" method="post" enctype="multipart/form-data" class='direct-upload')
+-#  %input{type: :hidden, name: :key}
+-#  %input{type: :hidden, name: "AWSAccessKeyId", value: ENV['AWS_ACCESS_KEY_ID']}
+-#  %input{type: :hidden, name: :acl, value: 'public-read'}
+-#  %input{type: :hidden, name: :policy}
+-#  %input{type: :hidden, name: :signature}
+-#  %input{type: :hidden, name: :success_action_status, value: "201"}
 
 :javascript
   $( document ).ready(function() {
@@ -17,6 +26,8 @@ Your files will be retained for #{@keep_days} days.
     var awsPolicy        = "#{aws_policy}";
     var awsSignature     = "#{aws_signature}";
     var acl              = "#{$ACL}";
+    var date             = "#{date}";
+    var awsMultipartAuth  = "#{aws_multipart_signature}";
 
     function Uploader(){
       this.uploadForm = new UploaderForm('.upload-form');
@@ -29,9 +40,8 @@ Your files will be retained for #{@keep_days} days.
         for (var i = 0; i < fileList.length; i++) {
           var file = new File(fileList[i]);
           this.fileQueue.push(file);
-          file.sendToAmazon()
+          file.sendToAmazon();
         }
-
       };
 
       _.bindAll(this, "getFiles");
@@ -46,45 +56,81 @@ Your files will be retained for #{@keep_days} days.
 
     function File(file){
       this.htmlFile = file;
-      this.name = 'uploads/'+this.htmlFile.name;
+      this.name = this.htmlFile.name;
       this.size = this.htmlFile.size;
-
+      this.totalChunks = function(){
+        return Math.ceil(this.size / multipartMinSize)
+      }
       this.canUseMultipart = function(){
         return this.size > multipartMinSize;
       };
+      this.date = new Date().toUTCString()
 
-      this.readerCallback = function(e) {
+      this.setFormData = function(e) {
         var fd = new FormData();
         fd.append('key',            this.name);
         fd.append('AWSAccessKeyId', accessKey);
         fd.append('acl',            acl);
         fd.append('policy',         awsPolicy);
         fd.append('signature',      awsSignature);
-        fd.append('file',           e.target.result)
+        fd.append('file',           e.target.result);
 
-        $.ajax({
-          url : 'https://s3.amazonaws.com/' + bucket + '/',
-          type: 'post',
-          data: fd,
-          processData: false,
-          contentType: false,
-          success: function(data) {
-            console.log(data);
-          }
-         });
+        this.sendFullFileToAmazon(fd);
       }
 
-      this.readFile = function(file, onLoadCallback){
+      this.sendFullFileToAmazon = function(formData){
+        $.ajax({
+          url : 'https://' + bucket + '.s3.amazonaws.com/',
+          type: 'post',
+          dataType: 'xml',
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function(data, textStatus, jqXHR ) {
+          }
+        })
+      };
+
+      this.readEntireFile = function(file, onLoadCallback){
         var reader = new FileReader();
         reader.onload = onLoadCallback;
         reader.readAsBinaryString(file);
       }
 
+      this.readBlobs = function(file, currentChunk, onLoadCallback){
+        var startByte = (multipartMinSize * currentChunk)
+        var endByte = multipartMinSize * (currentChunk +1)
+        var blob = file.slice(1, 2)
+        var reader = new FileReader();
+        reader.onload = onLoadCallback;
+        reader.readAsBinaryString(blob);
+      }
+
       this.sendToAmazon = function(){
-        this.readFile(this.htmlFile, this.readerCallback)
+        if(this.canUseMultipart()){
+          this.initiateMultipartUpload()
+        }else{
+          this.readEntireFile(this.htmlFile, this.setFormData)
+        };
       };
 
-      _.bindAll(this, "sendToAmazon", "readFile", "canUseMultipart", "readerCallback");
+      this.initiateMultipartUpload = function(){
+        $.ajax({
+          url : 'https://' + bucket + '.s3.amazonaws.com/'+this.name+'?uploads ',
+          type: 'post',
+          dataType: 'xml',
+          beforeSend: function (xhr) {
+            xhr.setRequestHeader("x-amz-date", date)
+            xhr.setRequestHeader("Authorization", awsMultipartAuth);
+          },
+          success: function(data, textStatus, jqXHR ) {
+
+          }
+        })
+      }
+
+      _.bindAll(this, "sendToAmazon", "readEntireFile", "canUseMultipart", "setFormData");
+      _.bindAll(this, "sendFullFileToAmazon", "readBlobs", "initiateMultipartUpload");
     }
 
     new Uploader();
