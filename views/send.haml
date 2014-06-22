@@ -17,6 +17,9 @@ Your files will be retained for #{@keep_days} days.
 -#  %input{type: :hidden, name: :signature}
 -#  %input{type: :hidden, name: :success_action_status, value: "201"}
 
+// will only work with auth v2
+// add <ExposeHeader>ETag</ExposeHeader> to CORS
+
 :javascript
   $( document ).ready(function() {
 
@@ -96,9 +99,9 @@ Your files will be retained for #{@keep_days} days.
       }
 
       this.readBlob = function(file, partNumber, sendPartToAmazon){
-        var startByte = (multipartMinSize * partNumber)
-        var endByte = multipartMinSize * (partNumber +1)
-        var blob = file.slice(1, 2)
+        var startByte = (multipartMinSize * partNumber-1)
+        var endByte = multipartMinSize * (partNumber)
+        var blob = file.slice(1, 20)
         var reader = new FileReader();
         reader.onload = function(e){sendPartToAmazon(e.target.result, partNumber);};
         reader.readAsBinaryString(blob);
@@ -164,19 +167,63 @@ Your files will be retained for #{@keep_days} days.
           dataType: 'xml',
           data: data,
           beforeSend: function (xhr) {
-            xhr.setRequestHeader("x-amz-date", date)
+            xhr.setRequestHeader("x-amz-date", date);
             xhr.setRequestHeader("Authorization", auth);
           },
           contentType: false,
           context: this,
           success: function(data, textStatus, jqXHR ) {
-            this.multipartAbort();
+            this.partNumber = 1
+            this.ETag = jqXHR.getResponseHeader('ETag').replace(/"/g, '');
+            this.completeMultipart(this.partNumber, this.ETag);
           },
           error: function(data, textStatus, jqXHR ) {
             this.multipartAbort();
-          },
+          }
+
+        //xhr = new XMLHttpRequest()
+        //xhr.open('PUT', 'https://' + bucket + '.s3.amazonaws.com/'+this.name+'?partNumber='+partNumber+'&uploadId='+this.uploadId, true);
+        //xhr.setRequestHeader('x-amz-date', date);
+        //xhr.setRequestHeader('Authorization', auth);
+        //xhr.onload = function() {
+        //  xhr.getResponseHeader("ETag")
+        //};
+        //
+        //xhr.send(data);
+
+
         })
       }
+
+      this.completeMultipart = function(partNumber, ETag){
+        var stringToSign = 'POST\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+date+'\n/'+bucket+'/'+this.name+'?uploadId='+this.uploadId;  //Add CONTENT MD5
+        var auth = encryptAuth(stringToSign)
+
+        var data =  '<CompleteMultipartUpload>' +
+                    '  <Part>' +
+                    '    <PartNumber>'+partNumber+'</PartNumber>' +
+                    '    <ETag>'+ETag+'</ETag>' +
+                    '  </Part>' +
+                    '</CompleteMultipartUpload>'
+        $.ajax({
+          url : 'https://' + bucket + '.s3.amazonaws.com/'+this.name+'?uploadId='+this.uploadId,
+          type: 'POST',
+          dataType: 'xml',
+          data: data,
+          beforeSend: function (xhr) {
+            xhr.setRequestHeader("x-amz-date", date);
+            xhr.setRequestHeader("Authorization", auth);
+          },
+          contentType: false,
+          context: this,
+          success: function(data, textStatus, jqXHR ) {
+          },
+          error: function(data, textStatus, jqXHR ) {
+            this.multipartAbort();
+          }
+        })
+      }
+
 
       function encryptAuth(stringToSign){
         var crypto = CryptoJS.HmacSHA1(stringToSign, secretKey).toString(CryptoJS.enc.Base64);
@@ -186,7 +233,7 @@ Your files will be retained for #{@keep_days} days.
 
       _.bindAll(this, "sendToAmazon", "readEntireFile", "canUseMultipart");
       _.bindAll(this, "sendFullFileToAmazon", "readBlob", "initiateMultipartUpload", "multipartAbort");
-      _.bindAll(this, "uploadParts", "sendPartToAmazon");
+      _.bindAll(this, "uploadParts", "sendPartToAmazon", "completeMultipart");
     }
 
     new Uploader();
