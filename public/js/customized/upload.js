@@ -2,6 +2,7 @@ function Upload(el, file, uploader){
   this.$el = $(el);
   this.file = file;
   this.uploader = uploader;
+  this.parts = [];
   this.date = new Date().toUTCString();
   this.bucket = uploader.bucket; //for now set bucket
   this.multipartMinSize = uploader.multipartMinSize;
@@ -71,45 +72,14 @@ function Upload(el, file, uploader){
 
   this.uploadParts = function(callback){
     for(var partNumber=1; partNumber < this.totalChunks(); partNumber++){
-      var startByte = (this.multipartMinSize * (partNumber-1));
-      var endByte = this.multipartMinSize * (partNumber);
-      var blob = this.file.slice(startByte, endByte);  //check if missing a byte
-
-      var reader = new FileReader();
-      reader.onload = function(e){callback(e.target.result, partNumber);};
-      reader.readAsDataURL(blob);
+      var part = new UploadPart(this.file, partNumber, this);
+      this.parts.push(part);
     }
-  };
-
-  this.sendPartToAmazon = function(data, partNumber){
-    var stringToSign = 'PUT\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.file.name+'?partNumber='+partNumber+'&uploadId='+this.uploadId;  //Add CONTENT MD5
-    var auth = this.encryptAuth(stringToSign);
-      
-    $.ajax({
-      url : 'https://'+this.bucket+'.s3.amazonaws.com/'+this.file.name+'?partNumber='+partNumber+'&uploadId='+this.uploadId,
-      type: 'PUT',
-      dataType: 'xml',
-      data: data,
-      beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", this.date);
-        xhr.setRequestHeader("Authorization", auth);
-      },
-      contentType:false,
-      context: this,
-      success: function(data, textStatus, jqXHR ) {
-        this.partNumber = 1;
-        this.ETag = jqXHR.getResponseHeader('ETag').replace(/"/g, '');
-        debugger;
-        this.completeMultipart(this.partNumber, this.ETag);
-      },
-      error: function(data, textStatus, jqXHR ) {
-        this.multipartAbort();
-      }
-    })
+    this.completeMultipart()
   };
 
   //TODO change multipart upload to work
-  this.completeMultipart = function(partNumber, ETag){
+  this.completeMultipart = function(){
     var stringToSign = 'POST\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.file.name+'?uploadId='+this.uploadId;  //Add CONTENT MD5
     var auth = this.encryptAuth(stringToSign);
 
@@ -145,5 +115,5 @@ function Upload(el, file, uploader){
   };
 
   _.bindAll(this, "sendFullFileToAmazon", "initiateMultipartUpload", "multipartAbort", "encryptAuth");
-  _.bindAll(this, "uploadParts", "sendPartToAmazon", "completeMultipart");
+  _.bindAll(this, "uploadParts", "completeMultipart");
 }
