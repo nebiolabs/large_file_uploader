@@ -98,6 +98,20 @@ get '/send/:upload_key' do |upload_key|
   haml :send
 end
 
+get '/api/variables' do
+  {
+    multipartMinSize:  5 * 1024 * 1024,
+    maxFileSize:       @max_file_size, #do not have
+    bucket:            $BUCKET,
+    accessKey:         $AWS_ACCESS_KEY_ID,
+    secretKey:         $AWS_SECRET,
+    awsPolicy:         aws_policy,
+    awsSignature:      aws_signature,
+    acl:               $ACL,
+    date:              date, #do not need
+  }.to_json
+end
+
 post '/notifications' do
   message = params[:message]
   #todo: validate the hashed message saying that the upload is complete
