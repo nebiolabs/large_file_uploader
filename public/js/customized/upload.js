@@ -14,7 +14,7 @@ function Upload(el, file, uploader){
 
   this.sendFullFileToAmazon = function(){
     var fd = new FormData();
-    fd.append('key',            this.name);
+    fd.append('key',            this.file.name);
     fd.append('AWSAccessKeyId', this.uploader.accessKey);
     fd.append('acl',            this.uploader.acl);
     fd.append('policy',         this.uploader.awsPolicy);
@@ -34,11 +34,11 @@ function Upload(el, file, uploader){
   };
 
   this.initiateMultipartUpload = function(){
-    var stringToSign = 'POST\n\n\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.name+'?uploads';
+    var stringToSign = 'POST\n\n\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.file.name+'?uploads';
     var auth = this.encryptAuth(stringToSign);
 
     $.ajax({
-      url : 'https://' + this.bucket + '.s3.amazonaws.com/'+this.name+'?uploads',
+      url : 'https://' + this.bucket + '.s3.amazonaws.com/'+this.file.name+'?uploads',
       type: 'post',
       dataType: 'xml',
       beforeSend: function (xhr) {
@@ -48,16 +48,16 @@ function Upload(el, file, uploader){
       context: this,
       success: function(data, textStatus, jqXHR ) {
         this.uploadId = data.getElementsByTagName("UploadId")[0].innerHTML; //this.uploadId
-        this.uploadParts();
+        this.uploadParts(this.sendPartToAmazon);
       }
     })
   };
 
   this.multipartAbort = function(){
-    var stringToSign = 'DELETE\n\n\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.name+'?uploadId='+this.uploadId;
+    var stringToSign = 'DELETE\n\n\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.file.name+'?uploadId='+this.uploadId;
     var auth = this.encryptAuth(stringToSign);
     $.ajax({
-      url : 'https://' + this.bucket + '.s3.amazonaws.com/'+this.name+'?uploadId='+this.uploadId,
+      url : 'https://' + this.bucket + '.s3.amazonaws.com/'+this.file.name+'?uploadId='+this.uploadId,
       type: 'DELETE',
       context: this,
       beforeSend: function (xhr) {
@@ -69,22 +69,24 @@ function Upload(el, file, uploader){
     })
   };
 
-  this.uploadParts = function(){
+  this.uploadParts = function(callback){
     for(var partNumber=1; partNumber < this.totalChunks(); partNumber++){
       var startByte = (this.multipartMinSize * (partNumber-1));
       var endByte = this.multipartMinSize * (partNumber);
       var blob = this.file.slice(startByte, endByte);  //check if missing a byte
-      this.sendPartToAmazon(blob, partNumber);
+
+      var reader = new FileReader();
+      reader.onload = function(e){callback(e.target.result, partNumber);};
+      reader.readAsDataURL(blob);
     }
   };
 
   this.sendPartToAmazon = function(data, partNumber){
-    var stringToSign = 'PUT\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.name+'?partNumber='+partNumber+'&uploadId='+this.uploadId;  //Add CONTENT MD5
+    var stringToSign = 'PUT\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.file.name+'?partNumber='+partNumber+'&uploadId='+this.uploadId;  //Add CONTENT MD5
     var auth = this.encryptAuth(stringToSign);
-
-
+      
     $.ajax({
-      url : 'https://'+this.bucket+'.s3.amazonaws.com/'+this.name+'?partNumber='+partNumber+'&uploadId='+this.uploadId,
+      url : 'https://'+this.bucket+'.s3.amazonaws.com/'+this.file.name+'?partNumber='+partNumber+'&uploadId='+this.uploadId,
       type: 'PUT',
       dataType: 'xml',
       data: data,
@@ -92,11 +94,12 @@ function Upload(el, file, uploader){
         xhr.setRequestHeader("x-amz-date", this.date);
         xhr.setRequestHeader("Authorization", auth);
       },
-      contentType: false,
+      contentType:false,
       context: this,
       success: function(data, textStatus, jqXHR ) {
         this.partNumber = 1;
         this.ETag = jqXHR.getResponseHeader('ETag').replace(/"/g, '');
+        debugger;
         this.completeMultipart(this.partNumber, this.ETag);
       },
       error: function(data, textStatus, jqXHR ) {
@@ -107,7 +110,7 @@ function Upload(el, file, uploader){
 
   //TODO change multipart upload to work
   this.completeMultipart = function(partNumber, ETag){
-    var stringToSign = 'POST\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.name+'?uploadId='+this.uploadId;  //Add CONTENT MD5
+    var stringToSign = 'POST\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.file.name+'?uploadId='+this.uploadId;  //Add CONTENT MD5
     var auth = this.encryptAuth(stringToSign);
 
     var data =  '<CompleteMultipartUpload>' +
@@ -118,7 +121,7 @@ function Upload(el, file, uploader){
       '</CompleteMultipartUpload>';
 
     $.ajax({
-      url : 'https://' + bucket + '.s3.amazonaws.com/'+this.name+'?uploadId='+this.uploadId,
+      url : 'https://' + this.bucket + '.s3.amazonaws.com/'+this.file.name+'?uploadId='+this.uploadId,
       type: 'POST',
       dataType: 'xml',
       data: data,
