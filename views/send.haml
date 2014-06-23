@@ -1,21 +1,49 @@
-Please upload your files here.
-A confirmation email will be sent to you and to #{@sender_email} when the upload has completed.
-Your files will be retained for #{@keep_days} days.
 
-%form.upload-form
-  %input#files{multiple: "multiple", name: "files[]", type: "file"}
-  %output#list
+
+-#%form.upload-form
+-#  %input#files{multiple: "multiple", name: "files[]", type: "file"}
+-#  %output#list
+
+%link{href: "/css/style.css", rel: "stylesheet"}
+%link{href: "/css/jquery.fileupload.css", rel: "stylesheet"}
 %script{src: "/js/underscore.js"}
 %script{src:"/js/hmac-sha1.js"}
 %script{src: "/js/enc-base64-min.js"}
 
--#%form(action="https://#{ENV['S3_BUCKET']}.s3.amazonaws.com" method="post" enctype="multipart/form-data" class='direct-upload')
--#  %input{type: :hidden, name: :key}
--#  %input{type: :hidden, name: "AWSAccessKeyId", value: ENV['AWS_ACCESS_KEY_ID']}
--#  %input{type: :hidden, name: :acl, value: 'public-read'}
--#  %input{type: :hidden, name: :policy}
--#  %input{type: :hidden, name: :signature}
--#  %input{type: :hidden, name: :success_action_status, value: "201"}
+.container.mtl
+  %h4.mbm
+    %p Please upload your files here.
+    %p A confirmation email will be sent to you and to #{@sender_email} when the upload has completed.
+    %p Your files will be retained for #{@keep_days} days.
+    %p File Size may look wrong due to KB to MB conversion
+  %form.upload-form
+    .row.mbm
+      %span.btn.btn-success.fileinput-button
+        %i.glyphicon.glyphicon-plus
+        %span Select files...
+        %input#fileupload{multiple: "multiple", name: "files[]", type: "file"}
+        %input{type: :hidden, name: :multipartMinSize, value: (5 * 1024 * 1024)}
+        %input{type: :hidden, name: :maxFileSize, value: @max_file_size}
+        %input{type: :hidden, name: :bucket, value: $BUCKET}
+        %input{type: :hidden, name: :accessKey, value: $AWS_ACCESS_KEY_ID}
+        %input{type: :hidden, name: :secretKey, value: $AWS_SECRET}
+        %input{type: :hidden, name: :awsPolicy, value: aws_policy}
+        %input{type: :hidden, name: :awsSignature, value: aws_signature}
+        %input{type: :hidden, name: :acl, value: $ACL}
+        %input{type: :hidden, name: :date, value: date}
+      %button.btn.btn-primary.start{type: "submit"}
+        %i.glyphicon.glyphicon-upload
+        %span Start upload
+    .row.mbm.files
+      %table.upload-table.full-width
+        %thead
+          %tr
+            %th File Name
+            %th File Size
+            %th Progress
+        %tbody
+    #files.files
+
 
 // will only work with auth v2
 // add <ExposeHeader>ETag</ExposeHeader> to CORS
@@ -35,27 +63,63 @@ Your files will be retained for #{@keep_days} days.
 
     function Uploader(){
       this.uploadForm = new UploaderForm('.upload-form');
+      this.$uploadTable = $('.upload-table');
       this.fileQueue = [];
 
-      this.getFiles = function(e){
+      this.getFile = function(e){
         e.preventDefault();
-        var fileList = e.target.files;  //file list object
+        var fileList = e.target.files;
 
         for (var i = 0; i < fileList.length; i++) {
           var file = new File(fileList[i]);
           this.fileQueue.push(file);
-          file.sendToAmazon();
+          this.$uploadTable.children('tbody').append(
+            '<tr>' +
+            ' <td>'+file.name+'</td>' +
+            '  <td>'+(file.size/1024/1024).toFixed(2)+'MB</td>' +
+            '  <td>' +
+            '    <div class="progress progress-striped active mts">' +
+            '      <div class="progress-bar" "aria-valuemax"="100" "aria-valuemin"= 0" "aria-valuenow"="45" style="width: 45%">' +
+            '        <span class="sr-only"></span>' +
+            '        45%</div>' +
+            '    </div>' +
+            '  </td>' +
+            '</tr>'
+          )
         }
       };
 
-      _.bindAll(this, "getFiles");
+      this.startUploads = function(e){
+        e.preventDefault();
+        for (var i = 0; i < this.fileQueue.length; i++) {
+           //new Upload();
+           this.fileQueue[i].sendToAmazon();
+        }
+      }
+      _.bindAll(this, "getFile", "startUploads");
 
-      this.uploadForm.$fileInput.change(this.getFiles);
+      this.uploadForm.$fileInput.change(this.getFile);
+      this.uploadForm.$el.submit(this.startUploads)
     }
+
+    //function Upload(el, file, form){
+    //  this.$el = $(el);
+    //  this.file = file;
+    //  this.form = form;
+    //}
 
     function UploaderForm(el){
       this.$el = $(el);
-      this.$fileInput = $('#files');
+      this.$fileInput = $('#fileupload');
+      //this.multipartMinSize = function(){return $("name='multipartMinSize'").val();}
+      //this.maxFileSize      = function(){return $("name='maxFileSize'").val();}
+      //this.bucket           = function(){return $("name='bucket'").val();}
+      //this.accessKey        = function(){return $("name='accessKey'").val();}
+      //this.secretKey        = function(){return $("name='secretKey'").val();}
+      //this.awsPolicy        = function(){return $("name='awsPolicy'").val();}
+      //this.awsSignature     = function(){return $("name='awsSignature'").val();}
+      //this.acl              = function(){return $("name='acl'").val();}
+      //this.date             = function(){return $("name='date'").val();}
     }
 
     function File(file){
@@ -71,14 +135,14 @@ Your files will be retained for #{@keep_days} days.
       this.date = new Date().toUTCString() //remember to change this date
       //this.uploadId = ''
 
-      this.sendFullFileToAmazon = function(data){
+      this.sendFullFileToAmazon = function(){
         var fd = new FormData();
         fd.append('key',            this.name);
         fd.append('AWSAccessKeyId', accessKey);
         fd.append('acl',            acl);
         fd.append('policy',         awsPolicy);
         fd.append('signature',      awsSignature);
-        fd.append('file',           data);
+        fd.append('file',           this.fileObj);
 
         $.ajax({
           url : 'https://' + bucket + '.s3.amazonaws.com/',
@@ -92,26 +156,11 @@ Your files will be retained for #{@keep_days} days.
         })
       };
 
-      this.readEntireFile = function(file, sendFullFileToAmazon){
-        var reader = new FileReader();
-        reader.onload = function(e){sendFullFileToAmazon(e.target.result);};
-        reader.readAsBinaryString(file);
-      }
-
-      this.readBlob = function(file, partNumber, sendPartToAmazon){
-        var startByte = (multipartMinSize * partNumber-1)
-        var endByte = multipartMinSize * (partNumber)
-        var blob = file.slice(1, 20)
-        var reader = new FileReader();
-        reader.onload = function(e){sendPartToAmazon(e.target.result, partNumber);};
-        reader.readAsBinaryString(blob);
-      }
-
       this.sendToAmazon = function(){
         if(this.canUseMultipart()){
           this.initiateMultipartUpload();
         }else{
-          this.readEntireFile(this.fileObj, this.sendFullFileToAmazon);
+          this.sendFullFileToAmazon;
         };
       };
 
@@ -153,7 +202,10 @@ Your files will be retained for #{@keep_days} days.
 
       this.uploadParts = function(){
         for(var partNumber=1; partNumber < this.totalChunks(); partNumber++){
-          this.readBlob(this.fileObj, partNumber, this.sendPartToAmazon);
+          var startByte = (multipartMinSize * partNumber-1)
+          var endByte = multipartMinSize * (partNumber)
+          var blob = this.fileObj.slice(startByte, endByte)  //check if missing a byte
+          this.sendPartToAmazon(blob, partNumber);
         }
       }
 
@@ -180,21 +232,11 @@ Your files will be retained for #{@keep_days} days.
           error: function(data, textStatus, jqXHR ) {
             this.multipartAbort();
           }
-
-        //xhr = new XMLHttpRequest()
-        //xhr.open('PUT', 'https://' + bucket + '.s3.amazonaws.com/'+this.name+'?partNumber='+partNumber+'&uploadId='+this.uploadId, true);
-        //xhr.setRequestHeader('x-amz-date', date);
-        //xhr.setRequestHeader('Authorization', auth);
-        //xhr.onload = function() {
-        //  xhr.getResponseHeader("ETag")
-        //};
-        //
-        //xhr.send(data);
-
-
         })
       }
 
+
+      //TODO change multipart upload to work
       this.completeMultipart = function(partNumber, ETag){
         var stringToSign = 'POST\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+date+'\n/'+bucket+'/'+this.name+'?uploadId='+this.uploadId;  //Add CONTENT MD5
         var auth = encryptAuth(stringToSign)
@@ -231,8 +273,8 @@ Your files will be retained for #{@keep_days} days.
         return auth
       }
 
-      _.bindAll(this, "sendToAmazon", "readEntireFile", "canUseMultipart");
-      _.bindAll(this, "sendFullFileToAmazon", "readBlob", "initiateMultipartUpload", "multipartAbort");
+      _.bindAll(this, "sendToAmazon", "canUseMultipart");
+      _.bindAll(this, "sendFullFileToAmazon", "initiateMultipartUpload", "multipartAbort");
       _.bindAll(this, "uploadParts", "sendPartToAmazon", "completeMultipart");
     }
 

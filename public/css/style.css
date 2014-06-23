@@ -1,0 +1,18 @@
+.mbm {margin-bottom:20px;}
+.mts {margin-top:23px;}
+.mtl {margin-top:160px;}
+
+table.full-width {
+    width: 100%;
+}
+
+thead {
+    border-bottom: 1px solid #dddddd;
+}
+
+.upload-table tr.even, .upload-table tr.alt, .upload-table tr:nth-of-type(even) {
+    border-bottom: 1px solid #e3e3e3;
+    border-top: 1px solid #e3e3e3;
+    white-space: nowrap;
+}
+
