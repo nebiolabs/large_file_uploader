@@ -14,30 +14,18 @@ function Upload(el, file, uploader){
   };
 
   this.sendFullFileToAmazon = function(){
-    var fd = new FormData();
-    fd.append('key',            this.file.name);
-    fd.append('AWSAccessKeyId', this.uploader.accessKey);
-    fd.append('acl',            this.uploader.acl);
-    fd.append('policy',         this.uploader.awsPolicy);
-    fd.append('signature',      this.uploader.awsSignature);
-    fd.append('file',           this.file);
+    var formData = new FormData();
+    formData.append('key',            this.file.name);
+    formData.append('AWSAccessKeyId', this.uploader.accessKey);
+    formData.append('acl',            this.uploader.acl);
+    formData.append('policy',         this.uploader.awsPolicy);
+    formData.append('signature',      this.uploader.awsSignature);
+    formData.append('file',           this.file);
 
-    $.ajax({
-      url : 'https://' + this.bucket + '.s3.amazonaws.com/',
-      type: 'post',
-      dataType: 'xml',
-      data: fd,
-      context: this,
-      xhr: function(){
-        var xhr = $.ajaxSettings.xhr() ;
-        xhr.upload.onprogress = this.progressHandler;
-        return xhr ;
-      },
-      processData: false,
-      contentType: false,
-      success: function(data, textStatus, jqXHR ) {
-      }
-    })
+    var xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener("progress", this.progressHandler, false);
+    xhr.open("POST", 'https://' + this.bucket + '.s3.amazonaws.com/');
+    xhr.send(formData);
   };
 
   this.initiateMultipartUpload = function(){
@@ -128,10 +116,10 @@ function Upload(el, file, uploader){
   };
 
   this.progressHandler = function(e){
-    var percent = Math.round((e.loaded / e.total) * 100);
+    var percent = Math.round((e.loaded / e.total) * 100)+'%';
 
-    this.$el.find('status').html(percent);
-    this.$el.find('.progress-bar').width(percent+'%')
+    this.$el.find('.status').html(percent);
+    this.$el.find('.progress-bar').width(percent)
   };
 
   _.bindAll(this, "sendFullFileToAmazon", "initiateMultipartUpload", "multipartAbort", "encryptAuth");
