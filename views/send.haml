@@ -1,9 +1,3 @@
-
-
--#%form.upload-form
--#  %input#files{multiple: "multiple", name: "files[]", type: "file"}
--#  %output#list
-
 %link{href: "/css/style.css", rel: "stylesheet"}
 %link{href: "/css/jquery.fileupload.css", rel: "stylesheet"}
 %script{src: "/js/underscore.js"}
@@ -14,8 +8,6 @@
 %script{src: "/js/customized/upload.js"}
 %script{src: "/js/customized/upload-part.js"}
 %script{src: "/js/customized/uploader.js"}
-
--#%script{src: "/js/customized/test.js"}
 
 .container.mtl
   %h4.mbm
@@ -29,15 +21,6 @@
         %i.glyphicon.glyphicon-plus
         %span Select files...
         %input#fileupload{multiple: "multiple", name: "files[]", type: "file"}
-        %input{type: :hidden, name: :multipartMinSize, value: (5 * 1024 * 1024)}
-        %input{type: :hidden, name: :maxFileSize, value: @max_file_size}
-        %input{type: :hidden, name: :bucket, value: $BUCKET}
-        %input{type: :hidden, name: :accessKey, value: $AWS_ACCESS_KEY_ID}
-        %input{type: :hidden, name: :secretKey, value: $AWS_SECRET}
-        %input{type: :hidden, name: :awsPolicy, value: aws_policy}
-        %input{type: :hidden, name: :awsSignature, value: aws_signature}
-        %input{type: :hidden, name: :acl, value: $ACL}
-        %input{type: :hidden, name: :date, value: date}
       %button.btn.btn-primary.start{type: "submit"}
         %i.glyphicon.glyphicon-upload
         %span Start upload

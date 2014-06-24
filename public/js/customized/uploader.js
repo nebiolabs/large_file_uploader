@@ -34,9 +34,9 @@ function Uploader(){
           '  <td>'+(file.size/1024/1024).toFixed(2)+'MB</td>' +
           '  <td>' +
           '    <div class="progress progress-striped active mts">' +
-          '      <div class="progress-bar" "aria-valuemax"="100" "aria-valuemin"= 0" "aria-valuenow"="45" style="width: 45%">' +
+          '      <div class="progress-bar">' +
           '        <span class="sr-only"></span>' +
-          '        45%</div>' +
+          '        <span class="status"></span></div>' +
           '    </div>' +
           '  </td>' +
           '</tr>'

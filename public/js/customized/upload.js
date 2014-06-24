@@ -27,6 +27,12 @@ function Upload(el, file, uploader){
       type: 'post',
       dataType: 'xml',
       data: fd,
+      context: this,
+      xhr: function(){
+        var xhr = $.ajaxSettings.xhr() ;
+        xhr.upload.onprogress = this.progressHandler;
+        return xhr ;
+      },
       processData: false,
       contentType: false,
       success: function(data, textStatus, jqXHR ) {
@@ -82,13 +88,7 @@ function Upload(el, file, uploader){
   this.completeMultipart = function(){
     var stringToSign = 'POST\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.file.name+'?uploadId='+this.uploadId;  //Add CONTENT MD5
     var auth = this.encryptAuth(stringToSign);
-
-    var data =  '<CompleteMultipartUpload>' +
-      '  <Part>' +
-      '    <PartNumber>'+partNumber+'</PartNumber>' +
-      '    <ETag>'+ETag+'</ETag>' +
-      '  </Part>' +
-      '</CompleteMultipartUpload>';
+    var data = this.generateXML();
 
     $.ajax({
       url : 'https://' + this.bucket + '.s3.amazonaws.com/'+this.file.name+'?uploadId='+this.uploadId,
@@ -114,6 +114,26 @@ function Upload(el, file, uploader){
     return 'AWS'+' '+this.uploader.accessKey+':'+crypto
   };
 
+  this.generateXML = function(){
+    var XML = '<CompleteMultipartUpload>';
+    this.parts.forEach(function(part){
+       XML = XML +
+         '  <Part>' +
+         '    <PartNumber>'+part.partNumber+'</PartNumber>' +
+         '    <ETag>'+part.ETag+'</ETag>' +
+         '  </Part>';
+      }
+    );
+    return XML + '</CompleteMultipartUpload>';
+  };
+
+  this.progressHandler = function(e){
+    var percent = Math.round((e.loaded / e.total) * 100);
+
+    this.$el.find('status').html(percent);
+    this.$el.find('.progress-bar').width(percent+'%')
+  };
+
   _.bindAll(this, "sendFullFileToAmazon", "initiateMultipartUpload", "multipartAbort", "encryptAuth");
-  _.bindAll(this, "uploadParts", "completeMultipart");
+  _.bindAll(this, "uploadParts", "completeMultipart", "generateXML", "progressHandler");
 }
