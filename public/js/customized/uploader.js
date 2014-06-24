@@ -4,7 +4,7 @@ function Uploader(){
     url: '/api/variables',
     dataType: 'json',
     context: this,
-    success: function(data, textStatus, jqXHR ) {
+    success: function(data) {
       this.multipartMinSize = data.multipartMinSize;
       this.maxFileSize      = data.maxFileSize;
       this.bucket           = data.bucket;
@@ -13,13 +13,13 @@ function Uploader(){
       this.awsPolicy        = data.awsPolicy;
       this.awsSignature     = data.awsSignature;
       this.acl              = data.acl;
-      this.date             = data.date;
     }
   });
 
   this.uploadForm = new UploaderForm('.upload-form');
   this.$uploadTable = $('.upload-table');
   this.fileQueue = [];
+  this.multipartMinSize= 5 * 1024 * 1024;
 
   this.getFile = function(e){
     e.preventDefault();

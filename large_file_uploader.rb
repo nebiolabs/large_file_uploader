@@ -16,12 +16,12 @@ configure :production do
   require 'newrelic_rpm'
 end
 
-$ACL = 'public-read-write' # remember to change back private
+$ACL = 'private' # remember to change back private
 $BUCKET = ENV['BUCKET'] # bucket cannot be uppercase
 $AWS_SECRET = ENV['AWS_SECRET_ACCESS_KEY']    #todo: get this from aaron
 $AWS_ACCESS_KEY_ID = ENV['AWS_ACCESS_KEY_ID']
-$IV = ENV['IV'] #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
-$CIPHER = ENV['CIPHER']
+$IV = 'T\xE0\xAEW<mUi\xE3\x93q\xB2\t\x9C\xA0\x88' #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
+$CIPHER = 'AES-128-CBC'
 
 def aws_policy
   conditions = [
@@ -47,10 +47,6 @@ def aws_signature
           $AWS_SECRET, aws_policy
       )
   ).gsub("\n","")
-end
-
-def date
-  (Time.now.utc).strftime('%a, %e %b %Y %H:%M:%S %z')
 end
 
 get '/' do
@@ -81,7 +77,6 @@ post '/uploads' do
 end
 
 get '/send/:upload_key' do |upload_key|
-  #parses the hashed structure containing the sender, expiration, etc
   upload_string = Base64.urlsafe_decode64(upload_key)
 
   decipher = OpenSSL::Cipher.new $CIPHER
@@ -100,15 +95,12 @@ end
 
 get '/api/variables' do
   {
-    multipartMinSize:  5 * 1024 * 1024,
-    maxFileSize:       @max_file_size, #do not have
     bucket:            $BUCKET,
     accessKey:         $AWS_ACCESS_KEY_ID,
     secretKey:         $AWS_SECRET,
     awsPolicy:         aws_policy,
     awsSignature:      aws_signature,
-    acl:               $ACL,
-    date:              date, #do not need
+    acl:               $ACL
   }.to_json
 end
 
@@ -144,6 +136,3 @@ def clipboard_link(text, bgcolor='#FFFFFF')
       </object>
   EOF
 end
-
-# klfxaNDxBuZ.Ct6diz6y6BBpwS0KEfNiC6Ee5LawxF9TksUW21WXJNz.4Sv2znPQ5QdJXGD4Db.zbaL69ewb0w--
-# vLLodADjvX.xh_H7R_O6Hv_htmE_0TR4bgT6EL9zM_ueZb52wB08PJRFtoFI98PuM5kiCEjIAKDMmD5S.0nslg--
