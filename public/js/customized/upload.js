@@ -1,108 +1,18 @@
-function Upload(el, file, uploader){
-  this.$el = $(el);
-  this.file = file;
-  this.uploader = uploader;
-  this.parts = [];
-  this.date = new Date().toUTCString();
-  this.bucket = uploader.bucket; //for now set bucket
-  this.multipartMinSize = uploader.multipartMinSize;
-  this.totalChunks = function(){
-    return Math.ceil(this.file.size / this.multipartMinSize)
-  };
-  this.canUseMultipart = function(){
-    return this.file.size > this.multipartMinSize;
-  };
+function Upload(el, file){
+  this.$el              = $(el);
+  this.file             = file;
+  this.parts            = [];
+  this.date             = new Date().toUTCString();
+  this.bucket           = 'neb-test-upload2'; //for now set bucket
+  this.multipartMinSize = 5 * 1024 * 1024;
+  this.totalChunks      = Math.ceil(this.file.size / this.multipartMinSize);
+  this.canUseMultipart  = this.file.size > this.multipartMinSize;
+  this.completedParts   = [];
+  this.initMultiStr     = 'POST\n\n\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+encodeURI(this.file.name)+'?uploads';
+  this.abortStr         = function(){return 'DELETE\n\n\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+encodeURI(this.file.name)+'?uploadId='+this.uploadId;};
+  this.finishMultiStr   = function(){return 'POST\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+encodeURI(this.file.name)+'?uploadId='+this.uploadId;};
 
-  this.sendFullFileToAmazon = function(){
-    var formData = new FormData();
-    formData.append('key',            this.file.name);
-    formData.append('AWSAccessKeyId', this.uploader.accessKey);
-    formData.append('acl',            this.uploader.acl);
-    formData.append('policy',         this.uploader.awsPolicy);
-    formData.append('signature',      this.uploader.awsSignature);
-    formData.append('file',           this.file);
-
-    var xhr = new XMLHttpRequest();
-    xhr.upload.addEventListener("progress", this.progressHandler, false);
-    xhr.open("POST", 'https://' + this.bucket + '.s3.amazonaws.com/');
-    xhr.send(formData);
-  };
-
-  this.initiateMultipartUpload = function(){
-    var stringToSign = 'POST\n\n\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.file.name+'?uploads';
-    var auth = this.encryptAuth(stringToSign);
-
-    $.ajax({
-      url : 'https://' + this.bucket + '.s3.amazonaws.com/'+this.file.name+'?uploads',
-      type: 'post',
-      dataType: 'xml',
-      beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", this.date);
-        xhr.setRequestHeader("Authorization", auth);
-      },
-      context: this,
-      success: function(data, textStatus, jqXHR ) {
-        this.uploadId = data.getElementsByTagName("UploadId")[0].innerHTML; //this.uploadId
-        this.uploadParts(this.sendPartToAmazon);
-      }
-    })
-  };
-
-  this.multipartAbort = function(){
-    var stringToSign = 'DELETE\n\n\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.file.name+'?uploadId='+this.uploadId;
-    var auth = this.encryptAuth(stringToSign);
-    $.ajax({
-      url : 'https://' + this.bucket + '.s3.amazonaws.com/'+this.file.name+'?uploadId='+this.uploadId,
-      type: 'DELETE',
-      context: this,
-      beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", this.date);
-        xhr.setRequestHeader("Authorization", auth);
-      },
-      success: function(data, textStatus, jqXHR ) {
-      }
-    })
-  };
-
-  this.uploadParts = function(callback){
-    for(var partNumber=1; partNumber < this.totalChunks(); partNumber++){
-      var part = new UploadPart(this.file, partNumber, this);
-      this.parts.push(part);
-    }
-    this.completeMultipart()
-  };
-
-  //TODO change multipart upload to work
-  this.completeMultipart = function(){
-    var stringToSign = 'POST\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+this.file.name+'?uploadId='+this.uploadId;  //Add CONTENT MD5
-    var auth = this.encryptAuth(stringToSign);
-    var data = this.generateXML();
-
-    $.ajax({
-      url : 'https://' + this.bucket + '.s3.amazonaws.com/'+this.file.name+'?uploadId='+this.uploadId,
-      type: 'POST',
-      dataType: 'xml',
-      data: data,
-      beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", this.date);
-        xhr.setRequestHeader("Authorization", auth);
-      },
-      contentType: false,
-      context: this,
-      success: function(data, textStatus, jqXHR ) {
-      },
-      error: function(data, textStatus, jqXHR ) {
-        this.multipartAbort();
-      }
-    })
-  };
-
-  this.encryptAuth = function(stringToSign){
-    var crypto = CryptoJS.HmacSHA1(stringToSign, this.uploader.secretKey).toString(CryptoJS.enc.Base64);
-    return 'AWS'+' '+this.uploader.accessKey+':'+crypto
-  };
-
-  this.generateXML = function(){
+  this.XML = function(){
     var XML = '<CompleteMultipartUpload>';
     this.parts.forEach(function(part){
        XML = XML +
@@ -122,6 +32,5 @@ function Upload(el, file, uploader){
     this.$el.find('.progress-bar').width(percent)
   };
 
-  _.bindAll(this, "sendFullFileToAmazon", "initiateMultipartUpload", "multipartAbort", "encryptAuth");
-  _.bindAll(this, "uploadParts", "completeMultipart", "generateXML", "progressHandler");
+  _.bindAll(this, "XML", "progressHandler");
 }
