@@ -22,7 +22,8 @@ function Uploader(){
 
   this.uploadForm = new UploaderForm('.upload-form');
   this.$uploadTable = $('.upload-table');
-  this.fileQueue = [];
+  this.uploadQueue = [];
+  this.uploadCounter = 0;
 
   this.getFile = function(e){
     e.preventDefault();
@@ -30,30 +31,36 @@ function Uploader(){
 
     for (var i = 0; i < fileList.length; i++) {
       var file = fileList[i];
-      var fileNumber = this.fileQueue.length;
+      var fileNumber = this.uploadCounter++;
 //      $('<td>').html(file.name);
       //handlebar.js
       this.$uploadTable.children('tbody').append(
           '<tr class=upload-'+fileNumber+'>' +
-          ' <td>'+file.name+'</td>' +
-          '  <td>'+(file.size/1024/1024).toFixed(2)+'MB</td>' +
-          '  <td>' +
+          ' <td class="col-md-2">'+file.name+'</td>' +
+          '  <td class="col-md-1">'+(file.size/1024/1024).toFixed(2)+'MB</td>' +
+          '  <td class="col-md-1">' +
           '    <div class="progress progress-striped active mts">' +
           '      <div class="progress-bar">' +
           '        <span class="sr-only"></span>' +
           '        <span class="status"></span></div>' +
           '    </div>' +
           '  </td>' +
+          '  <td>' +
+          '    <span class="btn btn-danger">' +
+          '      <i class="glyphicon glyphicon-remove-circle"></i></span>' +
+          '  </td>' +
           '</tr>'
       );
-      this.fileQueue.push(file);
+      var upload = new Upload($('.upload-'+fileNumber), file);
+      upload.$delete.click({upload: upload}, this.removeUpload);
+      this.uploadQueue.push(upload);
     }
   };
 
   this.startUploads = function(e){
     e.preventDefault();
-    for (var i = 0; i < this.fileQueue.length; i++) {
-      var upload = new Upload($('.upload-'+i), this.fileQueue[i]);
+    for (var i = 0; i < this.uploadQueue.length; i++) {
+      var upload = this.uploadQueue[i];
       if (upload.canUseMultipart) {
         this.initiateMultipartUpload(upload);
       } else {
@@ -165,12 +172,19 @@ function Uploader(){
     })
   };
 
+  this.removeUpload = function(e){
+    e.preventDefault();
+    var upload = e.data.upload;
+    upload.$el.remove();
+    this.uploadQueue = _.without(this.uploadQueue, upload)
+  };
+
   this.encryptAuth = function(stringToSign){
     var crypto = CryptoJS.HmacSHA1(stringToSign, this.secretKey).toString(CryptoJS.enc.Base64);
     return 'AWS'+' '+this.accessKey+':'+crypto
   };
 
-  _.bindAll(this, "sendPartToAmazon", 'handleSuccessfulSubmission');
+  _.bindAll(this, "sendPartToAmazon", 'handleSuccessfulSubmission', "removeUpload");
   _.bindAll(this, "getFile", "startUploads", "initiateMultipartUpload", "sendFullFileToAmazon");
   _.bindAll(this, "encryptAuth", "multipartAbort", "uploadParts", "completeMultipart");
 

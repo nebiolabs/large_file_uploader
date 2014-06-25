@@ -16,3 +16,10 @@ thead {
     white-space: nowrap;
 }
 
+.btn-danger{
+    margin-left:13px;
+}
+
+.glyphicon-remove-circle{
+    font-size:20px;
+}

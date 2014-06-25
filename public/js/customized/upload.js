@@ -3,6 +3,7 @@ function Upload(el, file){
   this.file             = file;
   this.parts            = [];
   this.date             = new Date().toUTCString();
+  this.$delete           = this.$el.find('.btn-danger');
   this.bucket           = 'neb-test-upload2'; //for now set bucket
   this.multipartMinSize = 5 * 1024 * 1024;
   this.totalChunks      = Math.ceil(this.file.size / this.multipartMinSize);
