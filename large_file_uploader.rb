@@ -5,7 +5,6 @@ require 'sinatra'
 require 'haml'
 require 'base64'
 require 'json'
-require 'digest/sha1'
 require 'pry'
 require 'dotenv'
 
@@ -16,38 +15,11 @@ configure :production do
   require 'newrelic_rpm'
 end
 
-$ACL = 'private' # remember to change back private
 $BUCKET = ENV['BUCKET'] # bucket cannot be uppercase
 $AWS_SECRET = ENV['AWS_SECRET_ACCESS_KEY']    #todo: get this from aaron
 $AWS_ACCESS_KEY_ID = ENV['AWS_ACCESS_KEY_ID']
 $IV = 'T\xE0\xAEW<mUi\xE3\x93q\xB2\t\x9C\xA0\x88' #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
 $CIPHER = 'AES-128-CBC'
-
-def aws_policy
-  conditions = [
-      # Change this path if you need, but adjust the javascript config
-      ["starts-with", "$key", ''],
-      { "bucket" => $BUCKET },
-      { "acl" => $ACL }
-  ]
-
-  policy = {
-      # Valid for 3 hours. Change according to your needs
-      'expiration' => (Time.now.utc + 3600 * 3).iso8601,
-      'conditions' => conditions
-  }
-
-  Base64.encode64(JSON.dump(policy)).gsub("\n","")
-end
-
-def aws_signature
-  Base64.encode64(
-      OpenSSL::HMAC.digest(
-          OpenSSL::Digest.new('sha1'),
-          $AWS_SECRET, aws_policy
-      )
-  ).gsub("\n","")
-end
 
 get '/' do
   haml :index
@@ -94,14 +66,7 @@ get '/send/:upload_key' do |upload_key|
 end
 
 get '/api/variables' do
-  {
-    bucket:            $BUCKET,
-    accessKey:         $AWS_ACCESS_KEY_ID,
-    secretKey:         $AWS_SECRET,
-    awsPolicy:         aws_policy,
-    awsSignature:      aws_signature,
-    acl:               $ACL
-  }.to_json
+  { bucket:$BUCKET, accessKey: $AWS_ACCESS_KEY_ID, secretKey: $AWS_SECRET }.to_json
 end
 
 post '/notifications' do

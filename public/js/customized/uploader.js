@@ -8,8 +8,6 @@ function Uploader(){
     this.bucket           = data.bucket;
     this.accessKey        = data.accessKey;
     this.secretKey        = data.secretKey;
-    this.awsPolicy        = data.awsPolicy;
-    this.awsSignature     = data.awsSignature;
     this.acl              = data.acl;
   };
 
@@ -76,22 +74,31 @@ function Uploader(){
 
   this.sendFullFileToAmazon = function(upload){
     //todo: abstract to AmazonFormPayload
-    var fd = new FormData();
-    fd.append('key',            upload.file.name);
-    fd.append('AWSAccessKeyId', this.accessKey);
-    fd.append('acl',            this.acl);
-    fd.append('policy',         this.awsPolicy);
-    fd.append('signature',      this.awsSignature);
-    fd.append('file',           upload.file);
+//    var fd = new FormData();
+//    fd.append('key',            upload.file.name);
+//    fd.append('AWSAccessKeyId', this.accessKey);
+//    fd.append('acl',            this.acl);
+//    fd.append('file',           upload.file);
 
     //todo: abstract to AmazonUpload
 //    var payload = new AmazonFormPayload(amazonFile, configuration);
 //    var uploader = new AmazonFormUpload()
 //    uploader.upload();
-    var xhr = new XMLHttpRequest();
-    xhr.upload.addEventListener("progress", upload.progressHandler, false);
-    xhr.open("POST", 'https://' + upload.bucket + '.s3.amazonaws.com/');
-    xhr.send(fd);
+
+//    xhr.upload.addEventListener("progress", upload.progressHandler, false);
+//   add back progress handler
+    var auth = this.encryptAuth(upload.initSingleStr);
+    $.ajax({
+      url: 'https://' + upload.bucket + '.s3.amazonaws.com/'+ upload.file.name,
+      type: 'PUT',
+      data: upload.file,
+      contentType:'multipart/form-data',
+      processData: false,
+      beforeSend: function (xhr) {
+        xhr.setRequestHeader("x-amz-date", upload.date);
+        xhr.setRequestHeader("Authorization", auth);
+      }
+    })
   };
 
   this.multipartAbort = function(upload){
@@ -114,7 +121,6 @@ function Uploader(){
     }
   };
 
-  //TODO change multipart upload to work
   this.completeMultipart = function(upload){
     var auth = this.encryptAuth(upload.finishMultiStr());
     var data = upload.XML();
