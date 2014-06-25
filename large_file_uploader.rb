@@ -2,15 +2,12 @@
 #set :bind, '0.0.0.0'
 
 require 'sinatra'
-require 'erb'
+require 'haml'
 require 'base64'
 require 'json'
 require 'digest/sha1'
 require 'pry'
 require 'dotenv'
-require 'aws-sdk'
-require 'pony'
-require_relative 'models/uploader'
 
 Dotenv.load
 
@@ -19,17 +16,45 @@ configure :production do
   require 'newrelic_rpm'
 end
 
+$ACL = 'private' # remember to change back private
+$BUCKET = ENV['BUCKET'] # bucket cannot be uppercase
 $AWS_SECRET = ENV['AWS_SECRET_ACCESS_KEY']    #todo: get this from aaron
-$IV = ENV['IV'] #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
-$CIPHER = ENV['CIPHER']
-$CHUNK_SIZE = (100 * 1024 * 1024)#in bytes
+$AWS_ACCESS_KEY_ID = ENV['AWS_ACCESS_KEY_ID']
+$IV = 'T\xE0\xAEW<mUi\xE3\x93q\xB2\t\x9C\xA0\x88' #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
+$CIPHER = 'AES-128-CBC'
+
+def aws_policy
+  conditions = [
+      # Change this path if you need, but adjust the javascript config
+      ["starts-with", "$key", ''],
+      { "bucket" => $BUCKET },
+      { "acl" => $ACL }
+  ]
+
+  policy = {
+      # Valid for 3 hours. Change according to your needs
+      'expiration' => (Time.now.utc + 3600 * 3).iso8601,
+      'conditions' => conditions
+  }
+
+  Base64.encode64(JSON.dump(policy)).gsub("\n","")
+end
+
+def aws_signature
+  Base64.encode64(
+      OpenSSL::HMAC.digest(
+          OpenSSL::Digest.new('sha1'),
+          $AWS_SECRET, aws_policy
+      )
+  ).gsub("\n","")
+end
 
 get '/' do
-  erb :index
+  haml :index
 end
 
 get '/uploads/new' do
-  erb :new_upload
+  haml :new_upload
 end
 
 post '/uploads' do
@@ -66,53 +91,24 @@ get '/send/:upload_key' do |upload_key|
   @max_file_size = plain_hash[:max_file_size]
   @dest_email = plain_hash[:dest_email]
 
-  erb :send
+  #set up the S3 bucket for this upload, with correct expiration policy.
+  haml :send
+end
+
+get '/api/variables' do
+  {
+    bucket:            $BUCKET,
+    accessKey:         $AWS_ACCESS_KEY_ID,
+    secretKey:         $AWS_SECRET,
+    awsPolicy:         aws_policy,
+    awsSignature:      aws_signature,
+    acl:               $ACL
+  }.to_json
 end
 
 post '/notifications' do
-  send_email(params[:sender_email])
-  send_email(params[:dest_email])
   # message = params[:message]
   #todo: validate the hashed message saying that the upload is complete
-end
-
-post '/uploads_temp' do
-  data = params[:file][:tempfile]
-  filename = params[:filename]
-
-  upload_path = "uploads_temp/"
-  mode = "ab"
-
-  File.open(upload_path + filename, mode) do |file|
-    file.write(data.read)
-  end
-
-  200
-end
-
-post '/amazon_upload' do
-  uploader = Uploader.new(params)
-  uploader.upload_to_amazon
-  content_type :json
-  {id: uploader.upload_id, part_number: uploader.part_number }.to_json
-end
-
-def send_email(address)
-  Pony.mail({
-      :to => address,
-      :subject => 'testing',
-      :body => 'Email Ready.',
-      :via => :smtp,
-      :via_options => {
-          :address              => 'smtp.gmail.com',
-          :port                 => '587',
-          :enable_starttls_auto => true,
-          :user_name            => ENV['EMAIL_ADDRESS'],
-          :password             => ENV['EMAIL_PASSWORD'],
-          :authentication       => :plain, # :plain, :login, :cram_md5, no auth by default
-          :domain               => "gmail.com" # the HELO domain provided by the client to the server
-      }
-  })
 end
 
 def clipboard_link(text, bgcolor='#FFFFFF')
@@ -141,5 +137,3 @@ def clipboard_link(text, bgcolor='#FFFFFF')
       </object>
   EOF
 end
-
-

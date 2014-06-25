@@ -1,0 +1,45 @@
+%link{href: "/css/style.css", rel: "stylesheet"}
+%link{href: "/css/jquery.fileupload.css", rel: "stylesheet"}
+%script{src: "/js/underscore.js"}
+%script{src:"/js/hmac-sha1.js"}
+%script{src: "/js/enc-base64-min.js"}
+
+%script{src: "/js/customized/uploader-form.js"}
+%script{src: "/js/customized/upload.js"}
+%script{src: "/js/customized/upload-part.js"}
+%script{src: "/js/customized/uploader.js"}
+
+.container.mtl
+  %h4.mbm
+    %p Please upload your files here.
+    %p A confirmation email will be sent to you and to #{@sender_email} when the upload has completed.
+    %p Your files will be retained for #{@keep_days} days.
+    %p File Size may look wrong due to KB to MB conversion
+  %form.upload-form
+    .row.mbm
+      %span.btn.btn-success.fileinput-button
+        %i.glyphicon.glyphicon-plus
+        %span Select files...
+        %input#fileupload{multiple: "multiple", name: "files[]", type: "file"}
+      %button.btn.btn-primary.start{type: "submit"}
+        %i.glyphicon.glyphicon-upload
+        %span Start upload
+    .row.mbm.files
+      %table.upload-table.full-width
+        %thead
+          %tr
+            %th File Name
+            %th File Size
+            %th Progress
+        %tbody
+    #files.files
+
+-#TODO add max file size validator
+
+// will only work with auth v2
+// add <ExposeHeader>ETag</ExposeHeader> to CORS
+
+:javascript
+  $( document ).ready(function() {
+    new Uploader();
+  });

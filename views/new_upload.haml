@@ -1,0 +1,59 @@
+.container.theme-showcase{role: "main"}
+  %div
+    %h1
+      NEB File Upload Service:
+    %p
+      Enter the following information to generate a URL to send to externally.
+      Any recipient will be able to upload files for the specified time period.
+      You and the recipient will receive an email notification upon successful upload.
+  .row
+    %form#upload-form.form-horizontal
+      %div
+        %label
+          Sender email address
+          %input#sender_email{name: "sender_email", type: "text"}/
+      %div
+        %label
+          Recipient email address
+          %input#destination_email{name: "destination_email", type: "text"}/
+      %div
+        %label
+          Allow uploads for
+          = succeed "days" do
+            %input#allow_upload_days{name: "allow_upload_days", type: "text", value: "30"}/
+      %div
+        %label
+          Keep uploads for
+          = succeed "days" do
+            %input#keep_file_days{name: "keep_file_days", type: "text", value: "30"}/
+      %div
+        %label
+          Maximum file size:
+          %select#max_file_size{name: "max_file_size"}
+            %option 100MB
+            %option 1GB
+            %option 10GB
+            %option 100GB
+            %option 1TB
+      %input.btn.btn-lg.btn-primary{type: "submit", value: "Create Upload Key"}/
+      / todo: do an ajax request the display the upload key, format it and put in the upload key box
+      %div
+        Upload Key :
+        %input#upload_key{label: "Paste this URL into an email to the uploader", type: "text", value: "Not created yet"}/
+        = clipboard_link ''
+
+:javascript
+  $(document).ready(function(e) {
+      $("#upload-form").submit(function(e) {
+          e.preventDefault();
+          var form_data = $(this).serialize();
+          $.ajax({
+              url: '/uploads',
+              type: 'POST',
+              data: form_data,
+              success: function(data){
+                  $('#upload_key').val(data.upload_key);
+              }
+          });
+      });
+  });
