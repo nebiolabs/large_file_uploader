@@ -32,25 +32,12 @@ function Uploader(){
     for (var i = 0; i < fileList.length; i++) {
       var file = fileList[i];
       var fileNumber = this.uploadCounter++;
-//      $('<td>').html(file.name);
-      //handlebar.js
-      this.$uploadTable.children('tbody').append(
-          '<tr class=upload-'+fileNumber+'>' +
-          ' <td class="col-md-2">'+file.name+'</td>' +
-          '  <td class="col-md-1">'+(file.size/1024/1024).toFixed(2)+'MB</td>' +
-          '  <td class="col-md-1">' +
-          '    <div class="progress progress-striped active mts">' +
-          '      <div class="progress-bar">' +
-          '        <span class="sr-only"></span>' +
-          '        <span class="status"></span></div>' +
-          '    </div>' +
-          '  </td>' +
-          '  <td>' +
-          '    <span class="btn btn-danger">' +
-          '      <i class="glyphicon glyphicon-remove-circle"></i></span>' +
-          '  </td>' +
-          '</tr>'
-      );
+
+      _.templateSettings = {interpolate: /\{\{(.+?)\}\}/g};
+      var template = _.template($('#template').html());
+      var resultTemplate = template({fileNumber: fileNumber, file: file});
+
+      this.$uploadTable.children('tbody').append(resultTemplate);
       var upload = new Upload($('.upload-'+fileNumber), file);
       upload.$delete.click({upload: upload}, this.removeUpload);
       this.uploadQueue.push(upload);

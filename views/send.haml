@@ -34,6 +34,19 @@
             %th{class:"col-md-1"} Delete
         %tbody
 
+%script{:id => "template", :type => "text/template"}
+  %tr{:class=> 'upload-{{fileNumber}}'}
+    %td.col-md-2 {{ file.name }}
+    %td.col-md-1 {{ (file.size/1024/1024).toFixed(2) }} MB
+    %td.col-md-1
+      .progress.progress-striped.active.mts
+        .progress-bar
+          %span.sr-only
+          %span.status
+    %td
+      %span.btn.btn-danger
+        %i.glyphicon.glyphicon-remove-circle
+
 -#TODO add max file size validator
 
 // will only work with auth v2
