@@ -1,6 +1,8 @@
 //ConfigurationRetriever: fetches the configuration for submission
 //Configuration model: abstraction to reflect the bucket, accessKey, etc
 function Uploader(){
+
+  //add check for html5
   this.handleSuccessfulSubmission = function(data){
     this.maxFileSize      = data.maxFileSize;
     this.bucket           = data.bucket;
@@ -30,6 +32,7 @@ function Uploader(){
       var file = fileList[i];
       var fileNumber = this.fileQueue.length;
 //      $('<td>').html(file.name);
+      //handlebar.js
       this.$uploadTable.children('tbody').append(
           '<tr class=upload-'+fileNumber+'>' +
           ' <td>'+file.name+'</td>' +
@@ -110,11 +113,10 @@ function Uploader(){
   };
 
   this.uploadParts = function(upload){
-    var ajax = [];
     for(var partNumber=1; partNumber <= upload.totalChunks; partNumber++){
       var part = new UploadPart(upload.file, partNumber, upload);
       upload.parts.push(part);
-      this.readPart(part, this.sendPartToAmazon);
+      this.sendPartToAmazon(part);
     }
   };
 
@@ -138,19 +140,20 @@ function Uploader(){
     })
   };
 
-  this.sendPartToAmazon = function(data, part){
+  this.sendPartToAmazon = function(part){
     var auth = this.encryptAuth(part.stringToSign());
 
     $.ajax({
       url: part.url(),
       type: 'PUT',
       dataType: 'xml',
-      data: data,
+      data: part.blob,
+      contentType:'multipart/form-data',
+      processData: false,
       beforeSend: function (xhr) {
         xhr.setRequestHeader("x-amz-date", part.upload.date);
         xhr.setRequestHeader("Authorization", auth);
       },
-      contentType:false,
       context: this,
       success: function(data, textStatus, jqXHR ) {
         part.ETag = jqXHR.getResponseHeader('ETag').replace(/"/g, '');
@@ -162,18 +165,12 @@ function Uploader(){
     })
   };
 
-  this.readPart = function(part, callback){
-    var reader = new FileReader();
-    reader.onload = function(e){callback(e.target.result, part);};
-    reader.readAsDataURL(part.blob);
-  };
-
   this.encryptAuth = function(stringToSign){
     var crypto = CryptoJS.HmacSHA1(stringToSign, this.secretKey).toString(CryptoJS.enc.Base64);
     return 'AWS'+' '+this.accessKey+':'+crypto
   };
 
-  _.bindAll(this, "readPart", "sendPartToAmazon", 'handleSuccessfulSubmission');
+  _.bindAll(this, "sendPartToAmazon", 'handleSuccessfulSubmission');
   _.bindAll(this, "getFile", "startUploads", "initiateMultipartUpload", "sendFullFileToAmazon");
   _.bindAll(this, "encryptAuth", "multipartAbort", "uploadParts", "completeMultipart");
 
