@@ -5,10 +5,8 @@ function Upload(el, file, config){
   this.config           = config;
   this.date             = new Date().toUTCString();
   this.$delete          = this.$el.find('.btn-danger');
-//  this.bucket           = 'neb-test-upload2';
-  this.multipartMinSize = 5 * 1024 * 1024;
-  this.totalChunks      = Math.ceil(this.file.size / this.multipartMinSize);
-  this.canUseMultipart  = this.file.size > this.multipartMinSize;
+  this.totalChunks      = Math.ceil(this.file.size / this.config.multipartMinSize);
+  this.canUseMultipart  = this.file.size > this.config.multipartMinSize;
   this.completedParts   = [];
   this.initSingleStr    = 'PUT\n\nmultipart/form-data\n\nx-amz-date:'+this.date+'\n/'+this.config.bucket+'/'+encodeURI(this.file.name);
   this.initMultiStr     = 'POST\n\n\n\nx-amz-date:'+this.date+'\n/'+this.config.bucket+'/'+encodeURI(this.file.name)+'?uploads';

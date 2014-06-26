@@ -4,8 +4,8 @@ function Uploader(config){
 
   //add check for html5
   this.config = config;
+  this.templateRenderer = new TemplateRenderer('#template');
   this.uploadForm = new UploaderForm('.upload-form');
-  this.$uploadTable = $('.upload-table');
   this.uploadQueue = [];
   this.uploadCounter = 0;
 
@@ -15,33 +15,33 @@ function Uploader(config){
 
     for (var i = 0; i < fileList.length; i++) {
       var file = fileList[i];
+      var fileNumber = this.uploadCounter++;
 
       if(file.size > this.config.maxFileSize){
         alert('THIS FILE IS TOO LARGE YO')
       } else {
-        var fileNumber = this.uploadCounter++;
-
-        _.templateSettings = {interpolate: /\{\{(.+?)\}\}/g};
-        var template = _.template($('#template').html());
-        var resultTemplate = template({fileNumber: fileNumber, file: file});
-
-        this.$uploadTable.children('tbody').append(resultTemplate);
-        var upload = new Upload($('.upload-'+fileNumber), file, this.config);
-        upload.$delete.click({upload: upload}, this.removeUpload);
-        this.uploadQueue.push(upload);
+        this.addUploadtoView(fileNumber, file);
+        this.initUpload(fileNumber, file);
       }
     }
+  };
+
+  this.addUploadtoView = function(fileNumber, file){
+    var template = this.templateRenderer.renderedUploadTemplate(fileNumber, file);
+    this.uploadForm.$tbody.append(template);
+  };
+
+  this.initUpload = function(fileNumber, file){
+    var upload = new Upload('.upload-'+fileNumber, file, this.config);
+    upload.$delete.on('click', {upload: upload}, this.removeUpload);
+    this.uploadQueue.push(upload);
   };
 
   this.startUploads = function(e){
     e.preventDefault();
     for (var i = 0; i < this.uploadQueue.length; i++) {
       var upload = this.uploadQueue[i];
-      if (upload.canUseMultipart) {
-        this.initiateMultipartUpload(upload);
-      } else {
-        this.sendFullFileToAmazon(upload);
-      }
+      upload.canUseMultipart ? this.initiateMultipartUpload(upload) : this.sendFullFileToAmazon(upload);
     }
   };
 
@@ -168,10 +168,10 @@ function Uploader(config){
     return 'AWS'+' '+this.config.accessKey+':'+crypto
   };
 
-  _.bindAll(this, "sendPartToAmazon", "removeUpload");
+  _.bindAll(this, "sendPartToAmazon", "removeUpload", "addUploadtoView", "initUpload");
   _.bindAll(this, "getFile", "startUploads", "initiateMultipartUpload", "sendFullFileToAmazon");
   _.bindAll(this, "encryptAuth", "multipartAbort", "uploadParts", "completeMultipart");
 
-  this.uploadForm.$fileInput.change(this.getFile);
-  this.uploadForm.$el.submit(this.startUploads)
+  this.uploadForm.$fileInput.on('change', this.getFile);
+  this.uploadForm.$el.on('submit', this.startUploads);
 }
