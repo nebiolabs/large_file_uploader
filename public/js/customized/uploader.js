@@ -151,7 +151,7 @@ function Uploader(config){
       },
       context: this,
       success: function(data, textStatus, jqXHR ) {
-        this.handler.successPartUploadHandler(part)
+        this.handler.successPartUploadHandler(part, jqXHR, this.completeMultipart)
       }
     })
   };
