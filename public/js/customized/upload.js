@@ -4,7 +4,7 @@ function Upload(el, file, config){
   this.parts            = [];
   this.config           = config;
   this.date             = new Date().toUTCString();
-  this.$delete          = this.$el.find('.btn-danger');
+  this.$deleteButton    = this.$el.find('.btn-danger');
   this.totalChunks      = Math.ceil(this.file.size / this.config.multipartMinSize);
   this.canUseMultipart  = this.file.size > this.config.multipartMinSize;
   this.completedParts   = [];

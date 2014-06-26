@@ -6,6 +6,7 @@ function Uploader(config){
   this.config = config;
   this.templateRenderer = new TemplateRenderer('#template');
   this.uploadForm = new UploaderForm('.upload-form');
+  this.handler = new Handler();
   this.uploadQueue = [];
   this.uploadCounter = 0;
 
@@ -20,20 +21,20 @@ function Uploader(config){
       if(file.size > this.config.maxFileSize){
         alert('THIS FILE IS TOO LARGE YO')
       } else {
-        this.addUploadtoView(fileNumber, file);
-        this.initUpload(fileNumber, file);
+        this.addUploadToView(fileNumber, file);
+        this.createUpload(fileNumber, file);
       }
     }
   };
 
-  this.addUploadtoView = function(fileNumber, file){
+  this.addUploadToView = function(fileNumber, file){
     var template = this.templateRenderer.renderedUploadTemplate(fileNumber, file);
     this.uploadForm.$tbody.append(template);
   };
 
-  this.initUpload = function(fileNumber, file){
+  this.createUpload = function(fileNumber, file){
     var upload = new Upload('.upload-'+fileNumber, file, this.config);
-    upload.$delete.on('click', {upload: upload}, this.removeUpload);
+    upload.$deleteButton.on('click', {upload: upload}, this.removeUpload);
     this.uploadQueue.push(upload);
   };
 
@@ -80,6 +81,11 @@ function Uploader(config){
 //    add back progress handler
     var auth = this.encryptAuth(upload.initSingleStr);
     $.ajax({
+      xhr: function(){
+        var xhr = $.ajaxSettings.xhr() ;
+        xhr.upload.addEventListener("progress", upload.progressHandler);
+        return xhr ;
+      },
       url: 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+ upload.file.name,
       type: 'PUT',
       data: upload.file,
@@ -125,8 +131,6 @@ function Uploader(config){
       beforeSend: function (xhr) {
         xhr.setRequestHeader("x-amz-date", upload.date);
         xhr.setRequestHeader("Authorization", auth);
-      },
-      success: function(data, textStatus, jqXHR ) {
       }
     })
   };
@@ -147,11 +151,7 @@ function Uploader(config){
       },
       context: this,
       success: function(data, textStatus, jqXHR ) {
-        part.ETag = jqXHR.getResponseHeader('ETag').replace(/"/g, '');
-        part.upload.completedParts.push(part);
-        if (part.upload.totalChunks === part.upload.completedParts.length){
-          this.completeMultipart(part.upload)
-        }
+        this.handler.successPartUploadHandler(part)
       }
     })
   };
@@ -168,7 +168,7 @@ function Uploader(config){
     return 'AWS'+' '+this.config.accessKey+':'+crypto
   };
 
-  _.bindAll(this, "sendPartToAmazon", "removeUpload", "addUploadtoView", "initUpload");
+  _.bindAll(this, "sendPartToAmazon", "removeUpload", "addUploadToView", "createUpload");
   _.bindAll(this, "getFile", "startUploads", "initiateMultipartUpload", "sendFullFileToAmazon");
   _.bindAll(this, "encryptAuth", "multipartAbort", "uploadParts", "completeMultipart");
 
