@@ -4,6 +4,9 @@
 %script{src:"/js/hmac-sha1.js"}
 %script{src: "/js/enc-base64-min.js"}
 
+%script{src: "/js/customized/config.js"}
+%script{src: "/js/customized/template-renderer.js"}
+%script{src: "/js/customized/handler.js"}
 %script{src: "/js/customized/uploader-form.js"}
 %script{src: "/js/customized/upload.js"}
 %script{src: "/js/customized/upload-part.js"}
@@ -28,11 +31,24 @@
       %table.upload-table.full-width
         %thead
           %tr
-            %th File Name
-            %th File Size
-            %th Progress
+            %th{class:"col-md-2"} File Name
+            %th{class:"col-md-1"} File Size
+            %th{class:"col-md-1"} Progress
+            %th{class:"col-md-1"} Delete
         %tbody
-    #files.files
+
+%script{:id => "template", :type => "text/template"}
+  %tr{:class=> 'upload-{{fileNumber}}'}
+    %td.col-md-2 {{ file.name }}
+    %td.col-md-1 {{ (file.size/1024/1024).toFixed(2) }} MB
+    %td.col-md-1
+      .progress.progress-striped.active.mts
+        .progress-bar
+          %span.sr-only
+          %span.status
+    %td
+      %span.btn.btn-danger
+        %i.glyphicon.glyphicon-remove-circle
 
 -#TODO add max file size validator
 
@@ -41,5 +57,6 @@
 
 :javascript
   $( document ).ready(function() {
-    new Uploader();
+    config = new Config(#{@max_file_size}, '#{$BUCKET}', '#{$AWS_ACCESS_KEY_ID}', '#{$AWS_SECRET}');
+    new Uploader(config);
   });

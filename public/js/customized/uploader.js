@@ -1,28 +1,14 @@
 //ConfigurationRetriever: fetches the configuration for submission
 //Configuration model: abstraction to reflect the bucket, accessKey, etc
-function Uploader(){
+function Uploader(config){
 
   //add check for html5
-  this.handleSuccessfulSubmission = function(data){
-    this.maxFileSize      = data.maxFileSize;
-    this.bucket           = data.bucket;
-    this.accessKey        = data.accessKey;
-    this.secretKey        = data.secretKey;
-    this.awsPolicy        = data.awsPolicy;
-    this.awsSignature     = data.awsSignature;
-    this.acl              = data.acl;
-  };
-
-  $.ajax({
-    url: '/api/variables',
-    dataType: 'json',
-    context: this,
-    success: this.handleSuccessfulSubmission
-  });
-
+  this.config = config;
+  this.templateRenderer = new TemplateRenderer('#template');
   this.uploadForm = new UploaderForm('.upload-form');
-  this.$uploadTable = $('.upload-table');
-  this.fileQueue = [];
+  this.handler = new Handler();
+  this.uploadQueue = [];
+  this.uploadCounter = 0;
 
   this.getFile = function(e){
     e.preventDefault();
@@ -30,42 +16,40 @@ function Uploader(){
 
     for (var i = 0; i < fileList.length; i++) {
       var file = fileList[i];
-      var fileNumber = this.fileQueue.length;
-//      $('<td>').html(file.name);
-      //handlebar.js
-      this.$uploadTable.children('tbody').append(
-          '<tr class=upload-'+fileNumber+'>' +
-          ' <td>'+file.name+'</td>' +
-          '  <td>'+(file.size/1024/1024).toFixed(2)+'MB</td>' +
-          '  <td>' +
-          '    <div class="progress progress-striped active mts">' +
-          '      <div class="progress-bar">' +
-          '        <span class="sr-only"></span>' +
-          '        <span class="status"></span></div>' +
-          '    </div>' +
-          '  </td>' +
-          '</tr>'
-      );
-      this.fileQueue.push(file);
+      var fileNumber = this.uploadCounter++;
+
+      if(file.size > this.config.maxFileSize){
+        alert('THIS FILE IS TOO LARGE YO')
+      } else {
+        this.addUploadToView(fileNumber, file);
+        this.createUpload(fileNumber, file);
+      }
     }
+  };
+
+  this.addUploadToView = function(fileNumber, file){
+    var template = this.templateRenderer.renderedUploadTemplate(fileNumber, file);
+    this.uploadForm.$tbody.append(template);
+  };
+
+  this.createUpload = function(fileNumber, file){
+    var upload = new Upload('.upload-'+fileNumber, file, this.config);
+    upload.$deleteButton.on('click', {upload: upload}, this.removeUpload);
+    this.uploadQueue.push(upload);
   };
 
   this.startUploads = function(e){
     e.preventDefault();
-    for (var i = 0; i < this.fileQueue.length; i++) {
-      var upload = new Upload($('.upload-'+i), this.fileQueue[i]);
-      if (upload.canUseMultipart) {
-        this.initiateMultipartUpload(upload);
-      } else {
-        this.sendFullFileToAmazon(upload);
-      }
+    for (var i = 0; i < this.uploadQueue.length; i++) {
+      var upload = this.uploadQueue[i];
+      upload.canUseMultipart ? this.initiateMultipartUpload(upload) : this.sendFullFileToAmazon(upload);
     }
   };
 
   this.initiateMultipartUpload = function(upload){
     var auth = this.encryptAuth(upload.initMultiStr);
     return $.ajax({
-      url : 'https://' + upload.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploads',
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploads',
       type: 'post',
       dataType: 'xml',
       context: this,
@@ -82,28 +66,42 @@ function Uploader(){
 
   this.sendFullFileToAmazon = function(upload){
     //todo: abstract to AmazonFormPayload
-    var fd = new FormData();
-    fd.append('key',            upload.file.name);
-    fd.append('AWSAccessKeyId', this.accessKey);
-    fd.append('acl',            this.acl);
-    fd.append('policy',         this.awsPolicy);
-    fd.append('signature',      this.awsSignature);
-    fd.append('file',           upload.file);
+//    var fd = new FormData();
+//    fd.append('key',            upload.file.name);
+//    fd.append('AWSAccessKeyId', this.accessKey);
+//    fd.append('acl',            this.acl);
+//    fd.append('file',           upload.file);
 
     //todo: abstract to AmazonUpload
 //    var payload = new AmazonFormPayload(amazonFile, configuration);
 //    var uploader = new AmazonFormUpload()
 //    uploader.upload();
-    var xhr = new XMLHttpRequest();
-    xhr.upload.addEventListener("progress", upload.progressHandler, false);
-    xhr.open("POST", 'https://' + upload.bucket + '.s3.amazonaws.com/');
-    xhr.send(fd);
+
+//    xhr.upload.addEventListener("progress", upload.progressHandler, false);
+//    add back progress handler
+    var auth = this.encryptAuth(upload.initSingleStr);
+    $.ajax({
+      xhr: function(){
+        var xhr = $.ajaxSettings.xhr() ;
+        xhr.upload.addEventListener("progress", upload.progressHandler);
+        return xhr ;
+      },
+      url: 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+ upload.file.name,
+      type: 'PUT',
+      data: upload.file,
+      contentType:'multipart/form-data',
+      processData: false,
+      beforeSend: function (xhr) {
+        xhr.setRequestHeader("x-amz-date", upload.date);
+        xhr.setRequestHeader("Authorization", auth);
+      }
+    })
   };
 
   this.multipartAbort = function(upload){
     var auth = this.encryptAuth(upload.abortStr());
     $.ajax({
-      url : 'https://' + this.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploadId='+upload.uploadId,
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploadId='+upload.uploadId,
       type: 'DELETE',
       beforeSend: function (xhr) {
         xhr.setRequestHeader("x-amz-date", upload.date);
@@ -120,13 +118,12 @@ function Uploader(){
     }
   };
 
-  //TODO change multipart upload to work
   this.completeMultipart = function(upload){
     var auth = this.encryptAuth(upload.finishMultiStr());
     var data = upload.XML();
 
     $.ajax({
-      url : 'https://' + upload.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploadId='+upload.uploadId,
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploadId='+upload.uploadId,
       type: 'POST',
       dataType: 'xml',
       data: data,
@@ -134,8 +131,6 @@ function Uploader(){
       beforeSend: function (xhr) {
         xhr.setRequestHeader("x-amz-date", upload.date);
         xhr.setRequestHeader("Authorization", auth);
-      },
-      success: function(data, textStatus, jqXHR ) {
       }
     })
   };
@@ -156,24 +151,27 @@ function Uploader(){
       },
       context: this,
       success: function(data, textStatus, jqXHR ) {
-        part.ETag = jqXHR.getResponseHeader('ETag').replace(/"/g, '');
-        part.upload.completedParts.push(part);
-        if (part.upload.totalChunks === part.upload.completedParts.length){
-          this.completeMultipart(part.upload)
-        }
+        this.handler.successPartUploadHandler(part)
       }
     })
   };
 
-  this.encryptAuth = function(stringToSign){
-    var crypto = CryptoJS.HmacSHA1(stringToSign, this.secretKey).toString(CryptoJS.enc.Base64);
-    return 'AWS'+' '+this.accessKey+':'+crypto
+  this.removeUpload = function(e){
+    e.preventDefault();
+    var upload = e.data.upload;
+    upload.$el.remove();
+    this.uploadQueue = _.without(this.uploadQueue, upload)
   };
 
-  _.bindAll(this, "sendPartToAmazon", 'handleSuccessfulSubmission');
+  this.encryptAuth = function(stringToSign){
+    var crypto = CryptoJS.HmacSHA1(stringToSign, this.config.secretKey).toString(CryptoJS.enc.Base64);
+    return 'AWS'+' '+this.config.accessKey+':'+crypto
+  };
+
+  _.bindAll(this, "sendPartToAmazon", "removeUpload", "addUploadToView", "createUpload");
   _.bindAll(this, "getFile", "startUploads", "initiateMultipartUpload", "sendFullFileToAmazon");
   _.bindAll(this, "encryptAuth", "multipartAbort", "uploadParts", "completeMultipart");
 
-  this.uploadForm.$fileInput.change(this.getFile);
-  this.uploadForm.$el.submit(this.startUploads)
+  this.uploadForm.$fileInput.on('change', this.getFile);
+  this.uploadForm.$el.on('submit', this.startUploads);
 }

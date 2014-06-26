@@ -1,16 +1,17 @@
-function Upload(el, file){
+function Upload(el, file, config){
   this.$el              = $(el);
   this.file             = file;
   this.parts            = [];
+  this.config           = config;
   this.date             = new Date().toUTCString();
-  this.bucket           = 'neb-test-upload2'; //for now set bucket
-  this.multipartMinSize = 5 * 1024 * 1024;
-  this.totalChunks      = Math.ceil(this.file.size / this.multipartMinSize);
-  this.canUseMultipart  = this.file.size > this.multipartMinSize;
+  this.$deleteButton    = this.$el.find('.btn-danger');
+  this.totalChunks      = Math.ceil(this.file.size / this.config.multipartMinSize);
+  this.canUseMultipart  = this.file.size > this.config.multipartMinSize;
   this.completedParts   = [];
-  this.initMultiStr     = 'POST\n\n\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+encodeURI(this.file.name)+'?uploads';
-  this.abortStr         = function(){return 'DELETE\n\n\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+encodeURI(this.file.name)+'?uploadId='+this.uploadId;};
-  this.finishMultiStr   = function(){return 'POST\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+this.date+'\n/'+this.bucket+'/'+encodeURI(this.file.name)+'?uploadId='+this.uploadId;};
+  this.initSingleStr    = 'PUT\n\nmultipart/form-data\n\nx-amz-date:'+this.date+'\n/'+this.config.bucket+'/'+encodeURI(this.file.name);
+  this.initMultiStr     = 'POST\n\n\n\nx-amz-date:'+this.date+'\n/'+this.config.bucket+'/'+encodeURI(this.file.name)+'?uploads';
+  this.abortStr         = function(){return 'DELETE\n\n\n\nx-amz-date:'+this.date+'\n/'+this.config.bucket+'/'+encodeURI(this.file.name)+'?uploadId='+this.uploadId;};
+  this.finishMultiStr   = function(){return 'POST\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+this.date+'\n/'+this.config.bucket+'/'+encodeURI(this.file.name)+'?uploadId='+this.uploadId;};
 
   this.XML = function(){
     var XML = '<CompleteMultipartUpload>';

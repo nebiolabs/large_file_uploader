@@ -1,3 +1,5 @@
+%script{src: "/js/jquery.clippy.min.js"}
+
 .container.theme-showcase{role: "main"}
   %div
     %h1
@@ -11,49 +13,61 @@
       %div
         %label
           Sender email address
-          %input#sender_email{name: "sender_email", type: "text"}/
+          %input#sender_email{name: "sender_email", type: "text"}
       %div
         %label
           Recipient email address
-          %input#destination_email{name: "destination_email", type: "text"}/
+          %input#destination_email{name: "destination_email", type: "text"}
       %div
         %label
           Allow uploads for
           = succeed "days" do
-            %input#allow_upload_days{name: "allow_upload_days", type: "text", value: "30"}/
+            %input#allow_upload_days{name: "allow_upload_days", type: "text", value: "30"}
       %div
         %label
           Keep uploads for
           = succeed "days" do
-            %input#keep_file_days{name: "keep_file_days", type: "text", value: "30"}/
+            %input#keep_file_days{name: "keep_file_days", type: "text", value: "30"}
       %div
         %label
           Maximum file size:
           %select#max_file_size{name: "max_file_size"}
-            %option 100MB
-            %option 1GB
-            %option 10GB
-            %option 100GB
-            %option 1TB
-      %input.btn.btn-lg.btn-primary{type: "submit", value: "Create Upload Key"}/
-      / todo: do an ajax request the display the upload key, format it and put in the upload key box
+            %option{value: 100 * 1024 * 1024} 100MB
+            %option{value: 1024 * 1024 * 1024} 1GB
+            %option{value: 10 * 1024 * 1024 * 1024} 10GB
+            %option{value: 100 * 1024 * 1024 * 1024} 100GB
+            %option{value: 1024 * 1024 * 1024 * 1024} 1TB
+      %input.btn.btn-lg.btn-primary{type: "submit", value: "Create Upload Key"}
       %div
         Upload Key :
-        %input#upload_key{label: "Paste this URL into an email to the uploader", type: "text", value: "Not created yet"}/
-        = clipboard_link ''
+        %input#upload_key{label: "Paste this URL into an email to the uploader", type: "text", value: "Not created yet"}
+        .span.clippy
 
 :javascript
-  $(document).ready(function(e) {
-      $("#upload-form").submit(function(e) {
-          e.preventDefault();
-          var form_data = $(this).serialize();
-          $.ajax({
-              url: '/uploads',
-              type: 'POST',
-              data: form_data,
-              success: function(data){
-                  $('#upload_key').val(data.upload_key);
-              }
-          });
-      });
+  $(document).ready(function(){
+
+    var $clippyEl = $('.clippy');
+    var $uploadInputEl = $('#upload_key');
+    $clippyEl.clippy();
+
+    $uploadInputEl.on("input", function(){
+      $clippyEl.clippy(
+        {text: $uploadInputEl.val()}
+      )
+    });
+
+    $("#upload-form").submit(function(e) {
+        e.preventDefault();
+        var form_data = $(this).serialize();
+        $.ajax({
+            url: '/uploads',
+            type: 'POST',
+            data: form_data,
+            success: function(data){
+                $uploadInputEl.val(data.upload_key);
+                $clippyEl.clippy({text: data.upload_key})
+            }
+        });
+    });
   });
+
