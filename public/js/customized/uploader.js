@@ -1,23 +1,9 @@
 //ConfigurationRetriever: fetches the configuration for submission
 //Configuration model: abstraction to reflect the bucket, accessKey, etc
-function Uploader(){
+function Uploader(config){
 
   //add check for html5
-  this.handleSuccessfulSubmission = function(data){
-    this.maxFileSize      = data.maxFileSize;
-    this.bucket           = data.bucket;
-    this.accessKey        = data.accessKey;
-    this.secretKey        = data.secretKey;
-    this.acl              = data.acl;
-  };
-
-  $.ajax({
-    url: '/api/variables',
-    dataType: 'json',
-    context: this,
-    success: this.handleSuccessfulSubmission
-  });
-
+  this.config = config;
   this.uploadForm = new UploaderForm('.upload-form');
   this.$uploadTable = $('.upload-table');
   this.uploadQueue = [];
@@ -29,16 +15,21 @@ function Uploader(){
 
     for (var i = 0; i < fileList.length; i++) {
       var file = fileList[i];
-      var fileNumber = this.uploadCounter++;
 
-      _.templateSettings = {interpolate: /\{\{(.+?)\}\}/g};
-      var template = _.template($('#template').html());
-      var resultTemplate = template({fileNumber: fileNumber, file: file});
+      if(file.size > this.config.maxFileSize){
+        alert('THIS FILE IS TOO LARGE YO')
+      } else {
+        var fileNumber = this.uploadCounter++;
 
-      this.$uploadTable.children('tbody').append(resultTemplate);
-      var upload = new Upload($('.upload-'+fileNumber), file);
-      upload.$delete.click({upload: upload}, this.removeUpload);
-      this.uploadQueue.push(upload);
+        _.templateSettings = {interpolate: /\{\{(.+?)\}\}/g};
+        var template = _.template($('#template').html());
+        var resultTemplate = template({fileNumber: fileNumber, file: file});
+
+        this.$uploadTable.children('tbody').append(resultTemplate);
+        var upload = new Upload($('.upload-'+fileNumber), file, this.config);
+        upload.$delete.click({upload: upload}, this.removeUpload);
+        this.uploadQueue.push(upload);
+      }
     }
   };
 
@@ -57,7 +48,7 @@ function Uploader(){
   this.initiateMultipartUpload = function(upload){
     var auth = this.encryptAuth(upload.initMultiStr);
     return $.ajax({
-      url : 'https://' + upload.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploads',
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploads',
       type: 'post',
       dataType: 'xml',
       context: this,
@@ -86,10 +77,10 @@ function Uploader(){
 //    uploader.upload();
 
 //    xhr.upload.addEventListener("progress", upload.progressHandler, false);
-//   add back progress handler
+//    add back progress handler
     var auth = this.encryptAuth(upload.initSingleStr);
     $.ajax({
-      url: 'https://' + upload.bucket + '.s3.amazonaws.com/'+ upload.file.name,
+      url: 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+ upload.file.name,
       type: 'PUT',
       data: upload.file,
       contentType:'multipart/form-data',
@@ -104,7 +95,7 @@ function Uploader(){
   this.multipartAbort = function(upload){
     var auth = this.encryptAuth(upload.abortStr());
     $.ajax({
-      url : 'https://' + this.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploadId='+upload.uploadId,
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploadId='+upload.uploadId,
       type: 'DELETE',
       beforeSend: function (xhr) {
         xhr.setRequestHeader("x-amz-date", upload.date);
@@ -126,7 +117,7 @@ function Uploader(){
     var data = upload.XML();
 
     $.ajax({
-      url : 'https://' + upload.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploadId='+upload.uploadId,
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploadId='+upload.uploadId,
       type: 'POST',
       dataType: 'xml',
       data: data,
@@ -173,11 +164,11 @@ function Uploader(){
   };
 
   this.encryptAuth = function(stringToSign){
-    var crypto = CryptoJS.HmacSHA1(stringToSign, this.secretKey).toString(CryptoJS.enc.Base64);
-    return 'AWS'+' '+this.accessKey+':'+crypto
+    var crypto = CryptoJS.HmacSHA1(stringToSign, this.config.secretKey).toString(CryptoJS.enc.Base64);
+    return 'AWS'+' '+this.config.accessKey+':'+crypto
   };
 
-  _.bindAll(this, "sendPartToAmazon", 'handleSuccessfulSubmission', "removeUpload");
+  _.bindAll(this, "sendPartToAmazon", "removeUpload");
   _.bindAll(this, "getFile", "startUploads", "initiateMultipartUpload", "sendFullFileToAmazon");
   _.bindAll(this, "encryptAuth", "multipartAbort", "uploadParts", "completeMultipart");
 

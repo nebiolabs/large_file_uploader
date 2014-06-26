@@ -65,10 +65,6 @@ get '/send/:upload_key' do |upload_key|
   haml :send
 end
 
-get '/api/variables' do
-  { bucket:$BUCKET, accessKey: $AWS_ACCESS_KEY_ID, secretKey: $AWS_SECRET }.to_json
-end
-
 post '/notifications' do
   message = params[:message]
   #todo: validate the hashed message saying that the upload is complete

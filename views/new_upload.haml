@@ -32,11 +32,11 @@
         %label
           Maximum file size:
           %select#max_file_size{name: "max_file_size"}
-            %option 100MB
-            %option 1GB
-            %option 10GB
-            %option 100GB
-            %option 1TB
+            %option{value: 100 * 1024 * 1024} 100MB
+            %option{value: 1024 * 1024 * 1024} 1GB
+            %option{value: 10 * 1024 * 1024 * 1024} 10GB
+            %option{value: 100 * 1024 * 1024 * 1024} 100GB
+            %option{value: 1024 * 1024 * 1024 * 1024} 1TB
       %input.btn.btn-lg.btn-primary{type: "submit", value: "Create Upload Key"}
       %div
         Upload Key :

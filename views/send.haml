@@ -4,6 +4,7 @@
 %script{src:"/js/hmac-sha1.js"}
 %script{src: "/js/enc-base64-min.js"}
 
+%script{src: "/js/customized/config.js"}
 %script{src: "/js/customized/uploader-form.js"}
 %script{src: "/js/customized/upload.js"}
 %script{src: "/js/customized/upload-part.js"}
@@ -54,5 +55,6 @@
 
 :javascript
   $( document ).ready(function() {
-    new Uploader();
+    config = new Config(#{@max_file_size}, '#{$BUCKET}', '#{$AWS_ACCESS_KEY_ID}', '#{$AWS_SECRET}');
+    new Uploader(config);
   });
