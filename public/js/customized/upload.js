@@ -13,19 +13,6 @@ function Upload(el, file, config){
   this.abortStr         = function(){return 'DELETE\n\n\n\nx-amz-date:'+this.date+'\n/'+this.config.bucket+'/'+encodeURI(this.file.name)+'?uploadId='+this.uploadId;};
   this.finishMultiStr   = function(){return 'POST\n\ntext/plain;charset=UTF-8\n\nx-amz-date:'+this.date+'\n/'+this.config.bucket+'/'+encodeURI(this.file.name)+'?uploadId='+this.uploadId;};
 
-  this.XML = function(){
-    var XML = '<CompleteMultipartUpload>';
-    this.parts.forEach(function(part){
-       XML = XML +
-         '  <Part>' +
-         '    <PartNumber>'+part.partNumber+'</PartNumber>' +
-         '    <ETag>'+part.ETag+'</ETag>' +
-         '  </Part>';
-      }
-    );
-    return XML + '</CompleteMultipartUpload>';
-  };
-
   this.progressHandler = function(e){
     var percent = Math.round((e.loaded / e.total) * 100)+'%';
 
@@ -33,5 +20,5 @@ function Upload(el, file, config){
     this.$el.find('.progress-bar').width(percent)
   };
 
-  _.bindAll(this, "XML", "progressHandler");
+  _.bindAll(this, "progressHandler");
 }

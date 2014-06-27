@@ -120,7 +120,7 @@ function Uploader(config){
 
   this.completeMultipart = function(upload){
     var auth = this.encryptAuth(upload.finishMultiStr());
-    var data = upload.XML();
+    var data = this.templateRenderer.renderXML(upload);
 
     $.ajax({
       url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploadId='+upload.uploadId,

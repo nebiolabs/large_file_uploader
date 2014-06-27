@@ -7,5 +7,18 @@ function TemplateRenderer(uploadTemplate) {
     return template({fileNumber: fileNumber, file: file});
   };
 
-  _.bindAll(this, "renderedUploadTemplate");
+  this.renderXML = function(upload){
+      var XML = '<CompleteMultipartUpload>';
+      upload.parts.forEach(function(part){
+          XML = XML +
+            '  <Part>' +
+            '    <PartNumber>'+part.partNumber+'</PartNumber>' +
+            '    <ETag>'+part.ETag+'</ETag>' +
+            '  </Part>';
+        }
+      );
+      return XML + '</CompleteMultipartUpload>';
+  };
+
+  _.bindAll(this, "renderedUploadTemplate", "renderXML");
 }
