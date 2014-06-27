@@ -8,6 +8,7 @@ require 'json'
 require 'pry'
 require 'dotenv'
 require 'pony'
+require 'aws-sdk'
 
 Dotenv.load
 
