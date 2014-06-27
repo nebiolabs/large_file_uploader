@@ -3,12 +3,13 @@
 function Uploader(config){
 
   //add check for html5
-  this.config = config;
+  this.config           = config;
   this.templateRenderer = new TemplateRenderer('#template');
-  this.uploadForm = new UploaderForm('.upload-form');
-  this.handler = new Handler();
-  this.uploadQueue = [];
-  this.uploadCounter = 0;
+  this.uploadForm       = new UploaderForm('.upload-form');
+  this.handler          = new Handler();
+  this.uploadQueue      = [];
+  this.completedUploads = [];
+  this.uploadCounter    = 0;
 
   this.getFile = function(e){
     e.preventDefault();
@@ -44,12 +45,15 @@ function Uploader(config){
       var upload = this.uploadQueue[i];
       upload.canUseMultipart ? this.initiateMultipartUpload(upload) : this.sendFullFileToAmazon(upload);
     }
+//    $( document ).ajaxStop(function() {
+//      $( "#status" ).html( "DOWNLOADS DONE" );
+//    });
   };
 
   this.initiateMultipartUpload = function(upload){
     var auth = this.encryptAuth(upload.initMultiStr);
     return $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploads',
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.file.name)+'?uploads',
       type: 'post',
       dataType: 'xml',
       context: this,
@@ -80,13 +84,14 @@ function Uploader(config){
 //    xhr.upload.addEventListener("progress", upload.progressHandler, false);
 //    add back progress handler
     var auth = this.encryptAuth(upload.initSingleStr);
+    debugger;
     $.ajax({
       xhr: function(){
         var xhr = $.ajaxSettings.xhr() ;
         xhr.upload.addEventListener("progress", upload.progressHandler);
         return xhr ;
       },
-      url: 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+ upload.file.name,
+      url: 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+ encodeURI(upload.file.name),
       type: 'PUT',
       data: upload.file,
       contentType:'multipart/form-data',
@@ -101,7 +106,7 @@ function Uploader(config){
   this.multipartAbort = function(upload){
     var auth = this.encryptAuth(upload.abortStr());
     $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploadId='+upload.uploadId,
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.file.name)+'?uploadId='+upload.uploadId,
       type: 'DELETE',
       beforeSend: function (xhr) {
         xhr.setRequestHeader("x-amz-date", upload.date);
@@ -123,7 +128,7 @@ function Uploader(config){
     var data = this.templateRenderer.renderXML(upload);
 
     $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.file.name+'?uploadId='+upload.uploadId,
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.file.name)+'?uploadId='+upload.uploadId,
       type: 'POST',
       dataType: 'xml',
       data: data,

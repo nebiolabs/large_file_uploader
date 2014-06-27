@@ -7,6 +7,7 @@ require 'base64'
 require 'json'
 require 'pry'
 require 'dotenv'
+require 'pony'
 
 Dotenv.load
 
@@ -60,14 +61,20 @@ get '/send/:upload_key' do |upload_key|
   plain_hash =  plain.split(';').inject(Hash.new){|hsh,elem| k,v = elem.split(':'); hsh[k.to_sym] = v; hsh}
   @keep_days = plain_hash[:keep_days]
   @sender_email = plain_hash[:sender_email]
-  @max_file_size = plain_hash[:max_file_size]
   @dest_email = plain_hash[:dest_email]
+  @max_file_size = plain_hash[:max_file_size]
 
   #set up the S3 bucket for this upload, with correct expiration policy.
   haml :send
 end
 
 post '/notifications' do
-  # message = params[:message]
-  #todo: validate the hashed message saying that the upload is complete
+  pony(params[:sender_email])
+  pony(params[:dest_email])
+end
+
+def pony(address)
+  Pony.mail :to => address,
+            :from => 'me@example.com',
+            :subject => haml(:email)
 end
