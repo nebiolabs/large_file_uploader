@@ -4,7 +4,7 @@ gem 'newrelic_rpm'
 gem 'dotenv'
 gem 'haml'
 gem 'pony'
-gem 'aws-sdk'
+gem 'aws-sdk', '~> 1.45.0'
 
 group :test, :development do
   gem 'pry'

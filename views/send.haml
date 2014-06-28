@@ -55,6 +55,6 @@
 
 :javascript
   $( document ).ready(function() {
-    config = new Config(#{@max_file_size}, '#{$BUCKET}', '#{$AWS_ACCESS_KEY_ID}', '#{$AWS_SECRET}', '#{@sender_email}', '#{@dest_email}')
+    config = new Config(#{@max_file_size}, '#{@bucket_name}', '#{$AWS_ACCESS_KEY_ID}', '#{$AWS_SECRET}', '#{@sender_email}', '#{@dest_email}')
     new Uploader(config);
   });

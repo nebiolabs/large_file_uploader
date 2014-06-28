@@ -32,11 +32,15 @@ get '/uploads/new' do
 end
 
 post '/uploads' do
+  time = Time.now
+
   source_hash = {
-      dest_email: params[:destination_email],
-      sender_email: params[:sender_email],
-      keep_days: params[:keep_file_days],
-      max_file_size: params[:max_file_size]
+    dest_email:    params[:destination_email].downcase,
+    sender_email:  params[:sender_email].downcase,
+    keep_days:     params[:keep_file_days],
+    max_file_size: params[:max_file_size],
+    current_time:  time.strftime('%H%M%S'),
+    current_day:   time.strftime('%Y%m%d')
   }
   source_string = source_hash.map{|k,v| "#{k}:#{v}"}.join(';')
 
@@ -60,11 +64,25 @@ get '/send/:upload_key' do |upload_key|
   plain = decipher.update(upload_string) + decipher.final
 
   plain_hash =  plain.split(';').inject(Hash.new){|hsh,elem| k,v = elem.split(':'); hsh[k.to_sym] = v; hsh}
-  @keep_days = plain_hash[:keep_days]
+
+  @keep_days = plain_hash[:keep_days].to_i
   @sender_email = plain_hash[:sender_email]
   @dest_email = plain_hash[:dest_email]
   @max_file_size = plain_hash[:max_file_size]
 
+  ###
+  @bucket_name = "nebupload_#{@sender_email}_#{plain_hash[:current_day]}_#{plain_hash[:current_time]}"
+  s3 = AWS::S3.new
+  bucket = s3.buckets[@bucket_name]
+
+    bucket.lifecycle_configuration.update do
+      binding.pry #http://www.rubydoc.info/github/aws/aws-sdk-ruby/AWS/S3/BucketLifecycleConfiguration:update
+      add_rule('nebupload', :expiration_time => @keep_days)
+    end
+  unless bucket.exists?
+    s3.buckets.create(@bucket_name, acl: :private)
+    bucket.cors.set({allowed_methods: ["GET", "POST", "PUT", "DELETE"], allowed_origins: ["*"], allowed_headers: ["*"], max_age_seconds: 3000, expose_headers: ["ETag"]})
+  end
   #set up the S3 bucket for this upload, with correct expiration policy.
   haml :send
 end
