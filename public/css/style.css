@@ -23,3 +23,18 @@ thead {
 .glyphicon-remove-circle{
     font-size:20px;
 }
+
+.banner {
+    background-color: rgb(58, 58, 58);
+    height: 122px;
+    max-width: 100%;
+}
+
+.banner h1{
+    line-height: 2.2em;
+    color:  #e3e3e3;
+}
+
+.row {
+    /*max-width:100%;*/
+}
