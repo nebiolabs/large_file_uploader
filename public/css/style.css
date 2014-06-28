@@ -27,7 +27,6 @@ thead {
 .banner {
     background-color: rgb(58, 58, 58);
     height: 122px;
-    max-width: 100%;
 }
 
 .banner h1{
@@ -35,6 +34,6 @@ thead {
     color:  #e3e3e3;
 }
 
-.row {
-    /*max-width:100%;*/
+.container {
+  background-color:#eee;
 }

@@ -1,31 +1,32 @@
-.container.theme-showcase{role: "main"}
-  .jumbotron
-    .row
-      .col-sm-4
-        %a{href: "Https://www.neb.com/"}
-          %img.img-responsive{alt: "NEB logo", src: "https://www.neb.com/~/media/NebUs/Navigation/logo-NEB.png"}
-      .col-sm-8
-        %h1 File Upload Service
-  .row
-    .col-sm-12
-      %h2 How this works:
-  .row
-    .col-sm-1
-      %h1 1
-    .col-sm-3
-      %p
-        Someone at NEB starts the process by
-        = succeed "." do
-          %a{href: "/uploads/new"} initiating an an upload
-    .col-sm-1
-      %h1 2
-    .col-sm-3
-      The uploader will receive an email containing URL for a dedicated upload location.
-    .col-sm-1
-      %h1 3
-    .col-sm-3
-      On upload completion, both the uploader and NEB recipient will receive an email notification.
-  %br/
-  .row.container
-    .col-sm-12.text-center
-      %button.btn.btn-lg.btn-primary{type: "button"} Initiate an upload
+.row.banner
+  .col-sm-3
+  .col-sm-2
+    %a{href: "Https://www.neb.com/"}
+      %img.img-responsive{alt: "NEB logo", src: "https://www.neb.com/~/media/NebUs/Navigation/logo-NEB.png"}
+  .col-sm-7
+    %h1 File Upload Service
+.row.container
+  .col-sm-3
+  .col-sm-9
+    %h2 How this works:
+.row
+  .col-sm-3
+  .col-sm-2
+    %h1 1
+    %p
+      Someone at NEB starts the process by
+      = succeed "." do
+        %a{href: "/uploads/new"} initiating an an upload
+  .col-sm-1
+  .col-sm-3
+    %h1 2
+    The uploader will receive an email containing URL for a dedicated upload location.
+  .col-sm-1
+  .col-sm-2
+    %h1 3
+    On upload completion, both the uploader and NEB recipient will receive an email notification.
+%br
+.row
+  .col-sm-12.text-center
+    %a.btn.btn-lg.btn-primary{type: "button"} Initiate an upload
+
