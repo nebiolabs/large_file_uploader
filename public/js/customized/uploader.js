@@ -45,6 +45,8 @@ function Uploader(config){
       var upload = this.uploadQueue[i];
       upload.canUseMultipart ? this.initiateMultipartUpload(upload) : this.sendFullFileToAmazon(upload);
     }
+    this.uploadForm.$fileInput.hide();
+    this.uploadQueue.forEach(function(upload){upload.$deleteButton.hide()});
 //    $( document ).ajaxStop(function() {
 //      $( "#status" ).html( "DOWNLOADS DONE" );
 //    });
@@ -84,7 +86,6 @@ function Uploader(config){
 //    xhr.upload.addEventListener("progress", upload.progressHandler, false);
 //    add back progress handler
     var auth = this.encryptAuth(upload.initSingleStr);
-    debugger;
     $.ajax({
       xhr: function(){
         var xhr = $.ajaxSettings.xhr() ;
@@ -94,12 +95,17 @@ function Uploader(config){
       url: 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+ encodeURI(upload.file.name),
       type: 'PUT',
       data: upload.file,
+      context: this,
       contentType:'multipart/form-data',
       processData: false,
       beforeSend: function (xhr) {
         xhr.setRequestHeader("x-amz-date", upload.date);
         xhr.setRequestHeader("Authorization", auth);
+      },
+      success: function() {
+        this.handler.successUploadCompleteHandler(this, upload)
       }
+
     })
   };
 
@@ -133,9 +139,13 @@ function Uploader(config){
       dataType: 'xml',
       data: data,
       contentType: false,
+      context: this,
       beforeSend: function (xhr) {
         xhr.setRequestHeader("x-amz-date", upload.date);
         xhr.setRequestHeader("Authorization", auth);
+      },
+      success: function() {
+        this.handler.successUploadCompleteHandler(this, upload)
       }
     })
   };
@@ -155,7 +165,7 @@ function Uploader(config){
         xhr.setRequestHeader("Authorization", auth);
       },
       context: this,
-      success: function(data, textStatus, jqXHR ) {
+      success: function(data, textStatus, jqXHR) {
         this.handler.successPartUploadHandler(part, jqXHR, this.completeMultipart)
       }
     })
@@ -173,9 +183,17 @@ function Uploader(config){
     return 'AWS'+' '+this.config.accessKey+':'+crypto
   };
 
+  this.sendCompletionEmail = function(){
+    $.ajax({
+      url: '/notifications/' + encodeURI(this.config.bucket),
+      type: 'POST',
+      dataType: 'json'
+    })
+  };
+
   _.bindAll(this, "sendPartToAmazon", "removeUpload", "addUploadToView", "createUpload");
   _.bindAll(this, "getFile", "startUploads", "initiateMultipartUpload", "sendFullFileToAmazon");
-  _.bindAll(this, "encryptAuth", "multipartAbort", "uploadParts", "completeMultipart");
+  _.bindAll(this, "encryptAuth", "multipartAbort", "uploadParts", "completeMultipart", "sendCompletionEmail");
 
   this.uploadForm.$fileInput.on('change', this.getFile);
   this.uploadForm.$el.on('submit', this.startUploads);

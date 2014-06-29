@@ -1,6 +1,7 @@
 
 #set :bind, '0.0.0.0'
 
+require 'bundler/setup'
 require 'sinatra'
 require 'haml'
 require 'base64'
@@ -75,19 +76,26 @@ get '/send/:upload_key' do |upload_key|
   s3 = AWS::S3.new
   bucket = s3.buckets[@bucket_name]
 
-    bucket.lifecycle_configuration.update do
-      binding.pry #http://www.rubydoc.info/github/aws/aws-sdk-ruby/AWS/S3/BucketLifecycleConfiguration:update
-      add_rule('nebupload', :expiration_time => @keep_days)
-    end
   unless bucket.exists?
     s3.buckets.create(@bucket_name, acl: :private)
     bucket.cors.set({allowed_methods: ["GET", "POST", "PUT", "DELETE"], allowed_origins: ["*"], allowed_headers: ["*"], max_age_seconds: 3000, expose_headers: ["ETag"]})
+    bucket.lifecycle_configuration.update({keep_days: @keep_days}) do |args|
+      add_rule('nebupload', expiration_time: args[:keep_days])
+    end
   end
   #set up the S3 bucket for this upload, with correct expiration policy.
   haml :send
 end
 
-post '/notifications' do
+post '/notifications/:bucket_name' do
+  bucket_name = URI.decode(params[:bucket_name])
+  s3 = AWS::S3.new
+  bucket = s3.buckets[bucket_name]
+
+  bucket.objects.each do |obj|
+    puts obj.key
+  end
+
   pony(params[:sender_email])
   pony(params[:dest_email])
 end

@@ -11,5 +11,13 @@ function Handler(){
     }
   };
 
-  _.bindAll(this, "successPartUploadHandler");
+  this.successUploadCompleteHandler = function(uploader, upload){
+    uploader.completedUploads.push(upload);
+    if (uploader.completedUploads.length === uploader.uploadQueue.length){
+      uploader.sendCompletionEmail();
+      uploader.completedUploads = [];
+    }
+  };
+
+  _.bindAll(this, "successPartUploadHandler", "successUploadCompleteHandler");
 }

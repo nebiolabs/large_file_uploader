@@ -1,9 +1,14 @@
-GEM
-  remote: https://rubygems.org/
+GIT
+  remote: https://github.com/sunkev/aws-sdk-ruby.git
+  revision: 137dfcfe7b1ad483b2596f4adc09c9b639eb6324
   specs:
     aws-sdk (1.45.0)
       json (~> 1.4)
       nokogiri (>= 1.4.4)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
     coderay (1.1.0)
     dotenv (0.11.1)
       dotenv-deployment (~> 0.0.2)
@@ -16,10 +21,10 @@ GEM
     method_source (0.8.2)
     mime-types (2.3)
     mini_portile (0.6.0)
-    newrelic_rpm (3.8.1.221)
+    newrelic_rpm (3.9.0.229)
     nokogiri (1.6.2.1)
       mini_portile (= 0.6.0)
-    pony (1.8)
+    pony (1.9)
       mail (>= 2.0)
     pry (0.10.0)
       coderay (~> 1.1.0)
@@ -39,7 +44,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  aws-sdk (~> 1.45.0)
+  aws-sdk (~> 1.45.0)!
   dotenv
   haml
   newrelic_rpm
