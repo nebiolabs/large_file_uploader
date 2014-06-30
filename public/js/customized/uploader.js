@@ -47,15 +47,12 @@ function Uploader(config){
     }
     this.uploadForm.$fileInput.hide();
     this.uploadQueue.forEach(function(upload){upload.$deleteButton.hide()});
-//    $( document ).ajaxStop(function() {
-//      $( "#status" ).html( "DOWNLOADS DONE" );
-//    });
   };
 
   this.initiateMultipartUpload = function(upload){
     var auth = this.encryptAuth(upload.initMultiStr);
     return $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.file.name)+'?uploads',
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.awsObjURL)+'?uploads',
       type: 'post',
       dataType: 'xml',
       context: this,
@@ -92,7 +89,7 @@ function Uploader(config){
         xhr.upload.addEventListener("progress", upload.progressHandler);
         return xhr ;
       },
-      url: 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+ encodeURI(upload.file.name),
+      url: 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+ encodeURI(upload.awsObjURL),
       type: 'PUT',
       data: upload.file,
       context: this,
@@ -112,7 +109,7 @@ function Uploader(config){
   this.multipartAbort = function(upload){
     var auth = this.encryptAuth(upload.abortStr());
     $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.file.name)+'?uploadId='+upload.uploadId,
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.awsObjURL)+'?uploadId='+upload.uploadId,
       type: 'DELETE',
       beforeSend: function (xhr) {
         xhr.setRequestHeader("x-amz-date", upload.date);
@@ -134,7 +131,7 @@ function Uploader(config){
     var data = this.templateRenderer.renderXML(upload);
 
     $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.file.name)+'?uploadId='+upload.uploadId,
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.awsObjURL)+'?uploadId='+upload.uploadId,
       type: 'POST',
       dataType: 'xml',
       data: data,
@@ -184,8 +181,10 @@ function Uploader(config){
   };
 
   this.sendCompletionEmail = function(){
+    this.uploadForm.$fileInput.show();
+    this.uploadQueue.forEach(function(upload){upload.$deleteButton.show()});
     $.ajax({
-      url: '/notifications/' + encodeURI(this.config.bucket),
+      url: '/notifications/' + encodeURI(this.config.folderName) +'/'+ encodeURI(this.config.senderEmail) +'/'+ encodeURI(this.config.destEmail),
       type: 'POST',
       dataType: 'json'
     })

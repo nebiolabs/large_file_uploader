@@ -72,36 +72,50 @@ get '/send/:upload_key' do |upload_key|
   @max_file_size = plain_hash[:max_file_size]
 
   ###
-  @bucket_name = "nebupload_#{@sender_email}_#{plain_hash[:current_day]}_#{plain_hash[:current_time]}"
+  @folder_name = "nebupload_#{@sender_email}_#{plain_hash[:current_day]}_#{plain_hash[:current_time]}"
   s3 = AWS::S3.new
-  bucket = s3.buckets[@bucket_name]
+  @bucket = s3.buckets[$BUCKET]
+  update_folder_expiration unless bucket_rule_exists?
 
-  unless bucket.exists?
-    s3.buckets.create(@bucket_name, acl: :private)
-    bucket.cors.set({allowed_methods: ["GET", "POST", "PUT", "DELETE"], allowed_origins: ["*"], allowed_headers: ["*"], max_age_seconds: 3000, expose_headers: ["ETag"]})
-    bucket.lifecycle_configuration.update({keep_days: @keep_days}) do |args|
-      add_rule('nebupload', expiration_time: args[:keep_days])
-    end
-  end
-  #set up the S3 bucket for this upload, with correct expiration policy.
   haml :send
 end
 
-post '/notifications/:bucket_name' do
-  bucket_name = URI.decode(params[:bucket_name])
+post '/notifications/:folder_name/:sender_email/:dest_email' do
+  folder_name = URI.decode(params[:folder_name])
   s3 = AWS::S3.new
-  bucket = s3.buckets[bucket_name]
+  bucket = s3.buckets[$BUCKET]
 
-  bucket.objects.each do |obj|
-    puts obj.key
+  @url_array = bucket.objects.with_prefix(folder_name).map do |obj|
+    {name: obj.key.gsub(folder_name + '/', ''), url: obj.url_for(:get, expires:obj.expiration_date).to_s}
   end
 
-  pony(params[:sender_email])
-  pony(params[:dest_email])
+  pony(URI.decode(params[:sender_email]))
+  pony(URI.decode(params[:dest_email]))
+end
+
+
+def update_folder_expiration
+  @bucket.lifecycle_configuration.update({keep_days: @keep_days, folder_name: @folder_name}) do |args|
+    add_rule(args[:folder_name] + '/', expiration_time: args[:keep_days ])
+  end
+end
+
+def bucket_rule_exists?
+  @bucket.lifecycle_configuration.rules.select{|rule|rule.prefix == "#{@folder_name}/"}.length > 0
 end
 
 def pony(address)
-  Pony.mail :to => address,
-            :from => 'me@example.com',
-            :subject => haml(:email)
+  Pony.mail to: address,
+            via: :smtp,
+            subject: 'NEB Upload Ready',
+            via_options: {
+                address:               'smtp.gmail.com',
+                port:                  '587',
+                enable_starttls_auto:  true,
+                user_name:             ENV['EMAIL_ADDRESS'],
+                password:              ENV['EMAIL_PASSWORD'],
+                authentication:        :plain, # :plain, :login, :cram_md5, no auth by default
+                domain:                "localhost.localdomain" # the HELO domain provided by the client to the server
+            },
+            html_body: erb(:email)
 end

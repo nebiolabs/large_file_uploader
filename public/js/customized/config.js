@@ -1,4 +1,4 @@
-function Config(maxFileSize, bucket, accessKey, secretKey, senderEmail, destEmail){
+function Config(maxFileSize, bucket, accessKey, secretKey, senderEmail, destEmail, folderName){
   this.maxFileSize      = maxFileSize;
   this.bucket           = bucket;
   this.accessKey        = accessKey;
@@ -6,4 +6,5 @@ function Config(maxFileSize, bucket, accessKey, secretKey, senderEmail, destEmai
   this.multipartMinSize = 5 * 1024 * 1024;
   this.senderEmail      = senderEmail;
   this.destEmail        = destEmail;
+  this.folderName       = folderName
 }
