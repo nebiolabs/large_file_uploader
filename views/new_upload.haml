@@ -1,47 +1,33 @@
-%script{src: "/js/jquery.clippy.min.js"}
+%link{href: "/css/form.css", rel: "stylesheet"}
 
-.container.theme-showcase{role: "main"}
-  %div
-    %h1
-      NEB File Upload Service:
-    %p
-      Enter the following information to generate a URL to send to externally.
-      Any recipient will be able to upload files for the specified time period.
-      You and the recipient will receive an email notification upon successful upload.
-  .row
-    %form#upload-form.form-horizontal
-      %div
-        %label
-          Sender email address
-          %input#sender_email{name: "sender_email", type: "text"}
-      %div
-        %label
-          Recipient email address
-          %input#destination_email{name: "destination_email", type: "text"}
-      %div
-        %label
-          Allow uploads for
-          = succeed "days" do
-            %input#allow_upload_days{name: "allow_upload_days", type: "text", value: "30"}
-      %div
-        %label
-          Keep uploads for
-          = succeed "days" do
-            %input#keep_file_days{name: "keep_file_days", type: "text", value: "30"}
-      %div
-        %label
-          Maximum file size:
-          %select#max_file_size{name: "max_file_size"}
-            %option{value: 100 * 1024 * 1024} 100MB
-            %option{value: 1024 * 1024 * 1024} 1GB
-            %option{value: 10 * 1024 * 1024 * 1024} 10GB
-            %option{value: 100 * 1024 * 1024 * 1024} 100GB
-            %option{value: 1024 * 1024 * 1024 * 1024} 1TB
-      %input.btn.btn-lg.btn-primary{type: "submit", value: "Create Upload Key"}
-      %div
-        Upload Key :
-        %input#upload_key{label: "Paste this URL into an email to the uploader", type: "text", value: "Not created yet"}
-        .span.clippy
+.form-container
+  %form#signup
+    .header
+      %h3 NEB File Upload:
+      %p Send email to sender and recipient with upload URL
+    .sep
+    .inputs
+      %input#sender_email{name: "sender_email", required: true, type: "text", placeholder: 'Sender email address'}
+      %input#destination_email{name: "destination_email", required: true, type: "text", placeholder:'Recipient email address'}
+      %input#allow_upload_days{name: "allow_upload_days", required: true, type: "text", placeholder:'Allowed upload days'}
+      %input#keep_file_days{name: "keep_file_days", required: true, type: "text", placeholder:'Allowed keep days'}
+      %label
+        Maximum file size:
+        %select#max_file_size{name: "max_file_size"}
+          %option{value: 100 * 1024 * 1024} 100MB
+          %option{value: 1024 * 1024 * 1024} 1GB
+          %option{value: 10 * 1024 * 1024 * 1024} 10GB
+          %option{value: 100 * 1024 * 1024 * 1024} 100GB
+          %option{value: 1024 * 1024 * 1024 * 1024} 1TB
+
+      %input#submit{type: "submit"}
+
+      Upload Key :
+      %input#upload_key{type: "text", value: "Not created yet"}
+      .span.clippy
+
+​
+%script{src: "/js/jquery.clippy.min.js"}
 
 :javascript
   $(document).ready(function(){
@@ -56,7 +42,7 @@
       )
     });
 
-    $("#upload-form").submit(function(e) {
+    $("#signup").submit(function(e) {
         e.preventDefault();
         var form_data = $(this).serialize();
         $.ajax({

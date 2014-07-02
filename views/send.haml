@@ -1,15 +1,3 @@
-%script{src: "/js/underscore.js"}
-%script{src:"/js/hmac-sha1.js"}
-%script{src: "/js/enc-base64-min.js"}
-
-%script{src: "/js/customized/config.js"}
-%script{src: "/js/customized/template-renderer.js"}
-%script{src: "/js/customized/handler.js"}
-%script{src: "/js/customized/uploader-form.js"}
-%script{src: "/js/customized/upload.js"}
-%script{src: "/js/customized/upload-part.js"}
-%script{src: "/js/customized/uploader.js"}
-
 .container.mtl
   %h4.mbm
     %p Please upload your files here.
@@ -19,14 +7,14 @@
   %form.upload-form
     .row.mbm
       %span.btn.btn-success.fileinput-button
-        %i.glyphicon.glyphicon-plus
+        %i.fa.fa-plus
         %span Select files...
         %input#fileupload{multiple: "multiple", name: "files[]", type: "file"}
       %button.btn.btn-primary.start{type: "submit"}
-        %i.glyphicon.glyphicon-upload
+        %i.fa.fa-upload
         %span Start upload
     .row.mbm.files
-      %table.upload-table.full-width
+      %table.upload-table.full-width.table-striped
         %thead
           %tr
             %th{class:"col-md-2"} File Name
@@ -46,10 +34,19 @@
           %span.status
     %td
       %span.btn.btn-danger
-        %i.glyphicon.glyphicon-remove-circle
+        %i.fa.fa-times
 
--#TODO add max file size validator
+%script{src: "/js/underscore.js"}
+%script{src:"/js/hmac-sha1.js"}
+%script{src: "/js/enc-base64-min.js"}
 
+%script{src: "/js/customized/config.js"}
+%script{src: "/js/customized/template-renderer.js"}
+%script{src: "/js/customized/handler.js"}
+%script{src: "/js/customized/uploader-form.js"}
+%script{src: "/js/customized/upload.js"}
+%script{src: "/js/customized/upload-part.js"}
+%script{src: "/js/customized/uploader.js"}
 // will only work with auth v2
 // add <ExposeHeader>ETag</ExposeHeader> to CORS
 

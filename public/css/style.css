@@ -24,21 +24,47 @@ thead {
     font-size:20px;
 }
 
-.banner {
-    background-color: rgb(58, 58, 58);
-    height: 122px;
+.circle {
+    width:25px;
+    height:25px;
 }
 
-.banner h1{
-    font-size: 60px;
-    line-height: 1.3em;
-    color:  #e3e3e3;
+.btn-xlarge {
+    padding: 12px 20px;
+    font-size: 22px;
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
+    border-radius: 8px;
+    margin-top:10px;
 }
 
-.header-container {
-    background-color:#eee;
+.carousel-caption {
+    right:22%;
+    top:36%;
 }
 
-.header-container h2{
-    font-size: 50px;
+/*Bottom CSS thanks to Jquery File Upload*/
+.fileinput-button {
+    position: relative;
+    overflow: hidden;
+}
+.fileinput-button input {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 0;
+    opacity: 0;
+    -ms-filter: 'alpha(opacity=0)';
+    font-size: 200px;
+    direction: ltr;
+    cursor: pointer;
+}
+
+/* Fixes for IE < 8 */
+@media screen\9 {
+    .fileinput-button input {
+        filter: alpha(opacity=0);
+        font-size: 100%;
+        height: 100%;
+    }
 }
