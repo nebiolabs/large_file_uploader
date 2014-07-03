@@ -34,10 +34,12 @@ end
 
 post '/uploads' do
   time = Time.now
+  sender_email = params[:sender_email].downcase
+  dest_email = params[:destination_email].downcase
 
   source_hash = {
-    dest_email:    params[:destination_email].downcase,
-    sender_email:  params[:sender_email].downcase,
+    dest_email:    dest_email,
+    sender_email:  sender_email,
     keep_days:     params[:keep_file_days],
     max_file_size: params[:max_file_size],
     current_time:  time.strftime('%H%M%S'),
@@ -51,8 +53,12 @@ post '/uploads' do
   cipher.iv = $IV
   encrypted_string = cipher.update(source_string)+cipher.final
 
+  @upload_key = Base64.urlsafe_encode64(encrypted_string)
+  send_email(sender_email, :initiation)
+  send_email(dest_email, :initiation)
+
   content_type :json
-  {upload_key: Base64.urlsafe_encode64(encrypted_string)}.to_json
+  {upload_key: @upload_key}.to_json
 end
 
 get '/send/:upload_key' do |upload_key|
@@ -86,11 +92,13 @@ post '/notifications/:folder_name/:sender_email/:dest_email' do
   bucket = s3.buckets[$BUCKET]
 
   @url_array = bucket.objects.with_prefix(folder_name).map do |obj|
-    {name: obj.key.gsub(folder_name + '/', ''), url: obj.url_for(:get, expires:obj.expiration_date).to_s}
+    obj_file_name = obj.key.gsub(folder_name + '/', '')
+    obj_url = obj.url_for(:get, expires:obj.expiration_date).to_s
+    {name: obj_file_name, url: obj_url}
   end
 
-  pony(URI.decode(params[:sender_email]))
-  pony(URI.decode(params[:dest_email]))
+  send_email(URI.decode(params[:sender_email]), :confirmation)
+  send_email(URI.decode(params[:dest_email]), :confirmation)
 end
 
 
@@ -104,7 +112,7 @@ def bucket_rule_exists?
   @bucket.lifecycle_configuration.rules.select{|rule|rule.prefix == "#{@folder_name}/"}.length > 0
 end
 
-def pony(address)
+def send_email(address, html)
   Pony.mail to: address,
             via: :smtp,
             subject: 'NEB Upload Ready',
@@ -117,5 +125,5 @@ def pony(address)
                 authentication:        :plain, # :plain, :login, :cram_md5, no auth by default
                 domain:                "localhost.localdomain" # the HELO domain provided by the client to the server
             },
-            html_body: erb(:email)
+            html_body: erb(html)
 end
