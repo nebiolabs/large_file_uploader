@@ -19,5 +19,17 @@ function Handler(){
     }
   };
 
-  _.bindAll(this, "successPartUploadHandler", "successUploadCompleteHandler");
+  this.multiPartFailUploadHandler = function(upload){
+    var auth = this.encryptAuth(upload.abortStr());
+    $.ajax({
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.awsObjURL)+'?uploadId='+upload.uploadId,
+      type: 'DELETE',
+      beforeSend: function (xhr) {
+        xhr.setRequestHeader("x-amz-date", upload.date);
+        xhr.setRequestHeader("Authorization", auth);
+      }
+    })
+  };
+
+  _.bindAll(this, "successPartUploadHandler", "successUploadCompleteHandler", "multiPartFailUploadHandler");
 }

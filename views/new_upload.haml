@@ -33,6 +33,7 @@
   $(document).ready(function(){
 
     var $clippyEl = $('.clippy');
+    var $submitButtonEl = $("#submit");
     var $uploadInputEl = $('#upload_key');
     $clippyEl.clippy();
 
@@ -44,14 +45,19 @@
 
     $("#signup").submit(function(e) {
         e.preventDefault();
+        $submitButtonEl.val('Email is sending');
         var form_data = $(this).serialize();
         $.ajax({
             url: '/uploads',
             type: 'POST',
             data: form_data,
             success: function(data){
-                $uploadInputEl.val(data.upload_key);
-                $clippyEl.clippy({text: data.upload_key})
+              $submitButtonEl.val('Email is sending... Please wait')
+              $uploadInputEl.val(data.upload_key);
+              $clippyEl.clippy({text: data.upload_key})
+            },
+            fail: function(){
+              $submitButtonEl.val('Email failed to send')
             }
         });
     });

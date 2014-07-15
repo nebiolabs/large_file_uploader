@@ -80,8 +80,6 @@ function Uploader(config){
 //    var uploader = new AmazonFormUpload()
 //    uploader.upload();
 
-//    xhr.upload.addEventListener("progress", upload.progressHandler, false);
-//    add back progress handler
     var auth = this.encryptAuth(upload.initSingleStr);
     $.ajax({
       xhr: function(){
@@ -101,19 +99,6 @@ function Uploader(config){
       },
       success: function() {
         this.handler.successUploadCompleteHandler(this, upload)
-      }
-
-    })
-  };
-
-  this.multipartAbort = function(upload){
-    var auth = this.encryptAuth(upload.abortStr());
-    $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.awsObjURL)+'?uploadId='+upload.uploadId,
-      type: 'DELETE',
-      beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", upload.date);
-        xhr.setRequestHeader("Authorization", auth);
       }
     })
   };
@@ -143,6 +128,9 @@ function Uploader(config){
       },
       success: function() {
         this.handler.successUploadCompleteHandler(this, upload)
+      },
+      fail: function() {
+        this.handler.multiPartFailUploadHandler(upload)
       }
     })
   };
@@ -164,6 +152,9 @@ function Uploader(config){
       context: this,
       success: function(data, textStatus, jqXHR) {
         this.handler.successPartUploadHandler(part, jqXHR, this.completeMultipart)
+      },
+      fail: function() {
+        this.handler.multiPartFailUploadHandler(part.upload)
       }
     })
   };
@@ -192,7 +183,7 @@ function Uploader(config){
 
   _.bindAll(this, "sendPartToAmazon", "removeUpload", "addUploadToView", "createUpload");
   _.bindAll(this, "getFile", "startUploads", "initiateMultipartUpload", "sendFullFileToAmazon");
-  _.bindAll(this, "encryptAuth", "multipartAbort", "uploadParts", "completeMultipart", "sendCompletionEmail");
+  _.bindAll(this, "encryptAuth", "uploadParts", "completeMultipart", "sendCompletionEmail");
 
   this.uploadForm.$fileInput.on('change', this.getFile);
   this.uploadForm.$el.on('submit', this.startUploads);
