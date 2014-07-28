@@ -45,14 +45,14 @@
 
     $("#signup").submit(function(e) {
         e.preventDefault();
-        $submitButtonEl.val('Email is sending');
+        $submitButtonEl.val('Email is sending... Please wait');
         var form_data = $(this).serialize();
         $.ajax({
             url: '/uploads',
             type: 'POST',
             data: form_data,
             success: function(data){
-              $submitButtonEl.val('Email is sending... Please wait')
+              $submitButtonEl.val('Email sucessfully sent')
               $uploadInputEl.val(data.upload_key);
               $clippyEl.clippy({text: data.upload_key})
             },

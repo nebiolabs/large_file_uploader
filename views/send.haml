@@ -1,18 +1,16 @@
-.container.mtl
+.container.upload-container.mtl
   %h4.mbm
-    %p Please upload your files here.
-    %p A confirmation email will be sent to you and to #{@sender_email} when the upload has completed.
-    %p Your files will be retained for #{@keep_days} days.
-    %p File Size may look wrong due to KB to MB conversion
+    %p.upload-header Drag & Drop a File
+    .upload-subheader Or select an option below
   %form.upload-form
     .row.mbm
-      %span.btn.btn-success.fileinput-button
-        %i.fa.fa-plus
-        %span Select files...
+      %span.btn.btn-success.fileinput-button.custom-button
+        %i.fa.fa-plus.fa-4x.mtrs
+        %p.mtss Select files...
         %input#fileupload{multiple: "multiple", name: "files[]", type: "file"}
-      %button.btn.btn-primary.start{type: "submit"}
-        %i.fa.fa-upload
-        %span Start upload
+      %button.btn.btn-primary.start.custom-button{type: "submit"}
+        %i.fa.fa-upload.fa-4x.mtrs
+        %p.mtss Start upload
     .row.mbm.files
       %table.upload-table.full-width.table-striped
         %thead
@@ -22,6 +20,10 @@
             %th{class:"col-md-1"} Progress
             %th{class:"col-md-1"} Delete
         %tbody
+  .upload-footer
+    %p Confirmation emails will be sent to #{@dest_email} and to #{@sender_email} when the upload is complete.
+    %p Your files will be retained for #{@keep_days} days.
+    %p Max file size is #{@max_file_size.to_f/(1024 * 1024 * 1024)} GB.
 
 %script{:id => "template", :type => "text/template"}
   %tr{:class=> 'upload-{{fileNumber}}'}
@@ -48,6 +50,8 @@
 %script{src: "/js/customized/upload-part.js"}
 %script{src: "/js/customized/uploader.js"}
 // will only work with auth v2
+// must be all lower case bucket
+// 1000 max parts for multipart. change multipart min size accordingly
 // add <ExposeHeader>ETag</ExposeHeader> to CORS
 
 :javascript

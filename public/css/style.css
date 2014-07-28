@@ -1,5 +1,7 @@
 .mbm {margin-bottom:20px;}
 .mts {margin-top:23px;}
+.mtrs {margin-top:7px;}
+.mtss {margin-top:5px;}
 .mtl {margin-top:160px;}
 
 table.full-width {
@@ -8,6 +10,14 @@ table.full-width {
 
 thead {
     border-bottom: 1px solid #dddddd;
+}
+
+.upload-table {
+    text-align: left;
+}
+
+.upload-table tbody {
+    background-color: white;
 }
 
 .upload-table tr.even, .upload-table tr.alt, .upload-table tr:nth-of-type(even) {
@@ -47,6 +57,32 @@ thead {
     position: relative;
 }
 
+.upload-container {
+    text-align: center;
+    background-color: rgb(246,246,246);
+    padding: 70px;
+    margin-bottom: 150px;
+    border-style: dashed;
+    border-color: rgb(215,215,215);
+}
+
+.upload-header {
+    font-size: 50px;
+    font-weight: bold;
+    color: rgb(137, 141, 142);
+}
+
+.upload-subheader {
+    font-size: 30px;
+    font-weight: 100;
+    color: rgb(171, 174, 175);
+}
+
+.upload-footer {
+    margin-top: 60px;
+    color: rgb(171, 174, 175);
+}
+
 .image-text {
     position: absolute;
     top: 63%;
@@ -54,6 +90,17 @@ thead {
     text-align: center;
     color: #fff;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.custom-button {
+    height: 115px;
+    width: 130px;
+    text-align: center;
+    margin-right: 10px;
+}
+
+.dragover {
+    border-color: rgb(92, 184, 92);
 }
 
 /*Bottom CSS thanks to Jquery File Upload*/

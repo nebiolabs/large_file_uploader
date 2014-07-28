@@ -13,7 +13,14 @@ function Uploader(config){
 
   this.getFile = function(e){
     e.preventDefault();
-    var fileList = e.target.files;
+
+    var fileList;
+    if(e.target.files === undefined){
+      fileList = e.originalEvent.dataTransfer.files;
+      this.uploadForm.$container.removeClass('dragover');
+    } else {
+      fileList = e.target.files;
+    }
 
     for (var i = 0; i < fileList.length; i++) {
       var file = fileList[i];
@@ -186,5 +193,6 @@ function Uploader(config){
   _.bindAll(this, "encryptAuth", "uploadParts", "completeMultipart", "sendCompletionEmail");
 
   this.uploadForm.$fileInput.on('change', this.getFile);
+  this.uploadForm.$container.on('drop', this.getFile);
   this.uploadForm.$el.on('submit', this.startUploads);
 }
