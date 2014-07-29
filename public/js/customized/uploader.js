@@ -48,12 +48,16 @@ function Uploader(config){
 
   this.startUploads = function(e){
     e.preventDefault();
-    for (var i = 0; i < this.uploadQueue.length; i++) {
-      var upload = this.uploadQueue[i];
-      upload.canUseMultipart ? this.initiateMultipartUpload(upload) : this.sendFullFileToAmazon(upload);
+
+    if (0 < this.uploadQueue.length) {
+      for (var i = 0; i < this.uploadQueue.length; i++) {
+        var upload = this.uploadQueue[i];
+        upload.canUseMultipart ? this.initiateMultipartUpload(upload) : this.sendFullFileToAmazon(upload);
+      }
+      this.uploadForm.$fileInput.hide();
+      this.uploadForm.$submit.hide();
+      this.uploadQueue.forEach(function(upload){upload.$deleteButton.hide()});
     }
-    this.uploadForm.$fileInput.hide();
-    this.uploadQueue.forEach(function(upload){upload.$deleteButton.hide()});
   };
 
   this.initiateMultipartUpload = function(upload){
@@ -106,6 +110,9 @@ function Uploader(config){
       },
       success: function() {
         this.handler.successUploadCompleteHandler(this, upload)
+      },
+      fail: function(){
+        upload.uploadFailed();
       }
     })
   };
@@ -180,6 +187,7 @@ function Uploader(config){
 
   this.sendCompletionEmail = function(){
     this.uploadForm.$fileInput.show();
+    this.uploadForm.$submit.show();
     this.uploadQueue.forEach(function(upload){upload.$deleteButton.show()});
     $.ajax({
       url: '/notifications/' + encodeURI(this.config.folderName) +'/'+ encodeURI(this.config.senderEmail) +'/'+ encodeURI(this.config.destEmail),

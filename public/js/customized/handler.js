@@ -3,8 +3,8 @@ function Handler(){
     part.ETag = jqXHR.getResponseHeader('ETag').replace(/"/g, '');
     part.upload.completedParts.push(part);
     var percent = Math.round((part.upload.completedParts.length / part.upload.totalChunks ) * 100)+'%';
-    part.upload.$el.find('.status').html(percent);
-    part.upload.$el.find('.progress-bar').width(percent);
+    part.upload.$status.html(percent);
+    part.upload.$progressBar.width(percent);
 
     if (part.upload.totalChunks === part.upload.completedParts.length){
       callback(part.upload)
@@ -21,6 +21,7 @@ function Handler(){
 
   this.multiPartFailUploadHandler = function(upload){
     var auth = this.encryptAuth(upload.abortStr());
+    upload.uploadFailed();
     $.ajax({
       url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.awsObjURL)+'?uploadId='+upload.uploadId,
       type: 'DELETE',

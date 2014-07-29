@@ -1,10 +1,12 @@
 function Upload(el, file, config){
   this.$el              = $(el);
+  this.$deleteButton    = this.$el.find('.btn-danger');
+  this.$progressBar     = this.$el.find('.progress-bar');
+  this.$status          = this.$el.find('.status');
   this.file             = file;
   this.parts            = [];
   this.config           = config;
   this.date             = new Date().toUTCString();
-  this.$deleteButton    = this.$el.find('.btn-danger');
   this.totalChunks      = Math.ceil(this.file.size / this.config.multipartMinSize);
   this.canUseMultipart  = this.file.size > this.config.multipartMinSize;
   this.completedParts   = [];
@@ -17,9 +19,14 @@ function Upload(el, file, config){
   this.progressHandler = function(e){
     var percent = Math.round((e.loaded / e.total) * 100)+'%';
 
-    this.$el.find('.status').html(percent);
-    this.$el.find('.progress-bar').width(percent)
+    this.$status.html(percent);
+    this.$progressBar.width(percent)
   };
 
-  _.bindAll(this, "progressHandler");
+  this.uploadFailed = function(){
+    this.$progressBar.css('background-color', '#d9534f');
+    this.$status.html('Upload Failed');
+  };
+
+  _.bindAll(this, "progressHandler", "uploadFailed");
 }

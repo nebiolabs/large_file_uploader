@@ -4,6 +4,7 @@ function UploaderForm(el){
   this.$container = $('.upload-container');
   this.$table = $('.upload-table');
   this.$tbody = this.$table.children('tbody');
+  this.$submit = $('.start');
 
   this.dragOver = function(e){
     e.preventDefault();
