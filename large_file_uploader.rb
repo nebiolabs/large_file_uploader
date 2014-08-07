@@ -115,15 +115,15 @@ end
 def send_email(address, html)
   Pony.mail to: address,
             via: :smtp,
-            subject: 'NEB Upload Ready',
+            subject: 'NEB File Uplaoder: Upload Ready',
             via_options: {
-                address:               'smtp.gmail.com',
+                address:               'relay.neb.com',
                 port:                  '587',
                 enable_starttls_auto:  true,
-                user_name:             ENV['EMAIL_ADDRESS'],
-                password:              ENV['EMAIL_PASSWORD'],
-                authentication:        :plain, # :plain, :login, :cram_md5, no auth by default
-                domain:                "localhost.localdomain" # the HELO domain provided by the client to the server
+                #user_name:             ENV['EMAIL_ADDRESS'],
+                #password:              ENV['EMAIL_PASSWORD'],
+                #authentication:        :plain, # :plain, :login, :cram_md5, no auth by default
+                domain:                "uploads.neb.com" # the HELO domain provided by the client to the server
             },
             html_body: erb(html)
 end
