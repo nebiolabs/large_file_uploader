@@ -5,6 +5,7 @@ gem 'dotenv'
 gem 'haml'
 gem 'pony'
 gem 'aws-sdk'
+gem 'capistrano', '~> 3.2.0'
 
 group :test, :development do
   gem 'pry'
