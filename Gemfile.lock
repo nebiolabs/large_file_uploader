@@ -54,6 +54,7 @@ PLATFORMS
 
 DEPENDENCIES
   aws-sdk
+  bundler
   capistrano (~> 3.2.0)
   dotenv
   haml
