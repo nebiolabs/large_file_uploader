@@ -6,7 +6,7 @@ require 'sinatra'
 require 'haml'
 require 'base64'
 require 'json'
-require 'pry'
+require 'pry' if development?
 require 'dotenv'
 require 'pony'
 require 'aws-sdk'
