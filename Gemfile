@@ -6,6 +6,7 @@ gem 'haml'
 gem 'pony'
 gem 'aws-sdk'
 gem 'capistrano', '~> 3.2.0'
+gem 'capistrano-bundler'
 gem 'bundler'
 
 group :test, :development do
