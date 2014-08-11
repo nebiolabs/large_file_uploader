@@ -4,13 +4,13 @@
   %form#signup
     .header
       %h3 NEB File Upload:
-      %p Send email to sender and recipient with upload URL
+      %p Submitting this form will send email to the recipient containing a URL allowing them to upload files
     .sep
     .inputs
-      %input#sender_email{name: "sender_email", required: true, type: "text", placeholder: 'Sender email address'}
+      %input#sender_email{name: "sender_email", required: true, type: "text", placeholder: 'Your email address'}
       %input#destination_email{name: "destination_email", required: true, type: "text", placeholder:'Recipient email address'}
-      %input#allow_upload_days{name: "allow_upload_days", required: true, type: "text", placeholder:'Allowed upload days'}
-      %input#keep_file_days{name: "keep_file_days", required: true, type: "text", placeholder:'Allowed keep days'}
+      %input#allow_upload_days{name: "allow_upload_days", required: true, type: "text", placeholder:'Days before upload link expires'}
+      %input#keep_file_days{name: "keep_file_days", required: true, type: "text", placeholder:'Days to keep uploaded files'}
       %label
         Maximum file size:
         %select#max_file_size{name: "max_file_size"}
@@ -20,11 +20,14 @@
           %option{value: 100 * 1024 * 1024 * 1024} 100GB
           %option{value: 1024 * 1024 * 1024 * 1024} 1TB
 
-      %input#submit{type: "submit"}
 
-      Upload Key :
-      %input#upload_key{type: "text", value: "Not created yet"}
-      .span.clippy
+      %input#submit{type: "submit", value: "Send email"}
+
+
+      %label
+        Upload Key :
+        %input#upload_key{type: "text", value: "Not created yet"}
+        .clippy
 
 ​
 %script{src: "/js/jquery.clippy.min.js"}
@@ -45,7 +48,7 @@
 
     $("#signup").submit(function(e) {
         e.preventDefault();
-        $submitButtonEl.val('Email is sending... Please wait');
+        $submitButtonEl.val('Sending email...');
         var form_data = $(this).serialize();
         $.ajax({
             url: '/uploads',

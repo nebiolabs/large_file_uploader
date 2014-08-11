@@ -1,50 +1,39 @@
-%link{href: "css/modern-business.css", rel: "stylesheet"}
 
-%nav.navbar.navbar-inverse.navbar-fixed-top{role: "navigation"}
-  .container
-    .navbar-header
-      %a{href: "Https://www.neb.com/"}
-        %img.img-responsive{alt: "NEB logo", src: "https://www.neb.com/~/media/NebUs/Navigation/logo-NEB.png", style: 'margin-bottom: 8px;'}
+.jumbotron
 
--#make responsive with absolute position if requirement
-.row
-  .fill.absolute{style: "height: 460px; background-image:url('/images/NEB_uploader.gif');"}
-    .image-text
-      %h1 How Does it Work:
-      %a.btn.btn-success.btn-xlarge{href:"/uploads/new"} Initiate Upload
+  %h1 File Upload Service
+
+  %a.btn.btn-success.btn-xlarge{href:"/uploads/new"} Initiate Upload
 
 .section
   .container
+    .row
+      .col-lg-12
+        %h2
+          How does it work?
     .row
       .col-lg-3.col-md-3
         %h3
           %img.circle{src:"/images/1NumberOneInCircle.png"}
           Initiate Upload
         %p
-          Click on the 'Initiate Upload' button or
-          %a{href: "/uploads/new"} here
-          to start the upload process. Submit a complete form.
+          Click on the 'Initiate Upload' button
+          to start the upload process.
       .col-lg-3.col-md-3
         %h3
           %img.circle{src:"/images/2NumberTwoInCircle.png"}
           Receive Email
         %p
-          Receive an email with an upload link. Visit upload link.
+          Recipient receives an email with an upload link.
       .col-lg-3.col-md-3
         %h3
           %img.circle{src:"/images/3NumberThreeInCircle.png"}
           Upload Files
         %p
-          Add uploads and upload!
+          Recipient adds and uploads files
       .col-lg-3.col-md-3
         %h3
           %img.circle{src:"/images/4NumberFourInCircle.png"}
-          Receive Email
-        %p On upload completion, both the uploader and NEB recipient will receive an email notification.
+          Confirmation
+        %p When upload is complete, you and the uploader will receive an email notification.
 
-.container
-  %hr
-  %footer
-    .row
-      .col-lg-12
-        %p © Copyright 2014 New England Biolabs. All Rights Reserved

@@ -14,4 +14,16 @@
   %body
     %script{src: "/js/jquery-1.10.2.js"}
     %script{src: "/js/modernizr.custom.js"}
-    = yield
+
+    %nav.navbar.navbar-inverse.navbar-fixed-top{role: "navigation"}
+      .container
+        %a{href: "https://www.neb.com/"}
+          %img{alt: "NEB logo",  src: "https://www.neb.com/~/media/NebUs/Navigation/logo-NEB.png", height: "90px"}
+    .container
+      = yield
+    .container
+      %hr
+      %footer
+        .row
+          .col-lg-12
+            %p © Copyright 2014 New England Biolabs. All Rights Reserved

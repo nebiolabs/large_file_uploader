@@ -11,6 +11,12 @@ table.full-width {
 thead {
     border-bottom: 1px solid #dddddd;
 }
+.navbar img
+{
+    padding:5px;
+}
+
+body { padding-top: 100px; }
 
 .upload-table {
     text-align: left;
@@ -37,6 +43,34 @@ thead {
 .circle {
     width:25px;
     height:25px;
+}
+
+.btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 15px 0;
+    color: #505050;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-align: center;
+    text-decoration: none;
+    background: #f5f6f1;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    border: 1px solid #c7c7c5;
+}
+
+.btn-success {
+    color: #ffffff;
+    background: #ed6a24;
+}
+
+.btn:hover {
+    background: #cccbc6;
+    color: #505050;
+    border: 1px solid #505050;
 }
 
 .btn-xlarge {
