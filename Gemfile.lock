@@ -19,6 +19,7 @@ GEM
     haml (4.0.5)
       tilt
     i18n (0.6.11)
+    ip (0.3.1)
     json (1.8.1)
     mail (2.6.1)
       mime-types (>= 1.16, < 3)
@@ -62,6 +63,7 @@ DEPENDENCIES
   capistrano-bundler
   dotenv
   haml
+  ip
   newrelic_rpm
   pony
   pry

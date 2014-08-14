@@ -10,8 +10,9 @@ require 'pry' if development?
 require 'dotenv'
 require 'pony'
 require 'aws-sdk'
+require 'ip'
 
-Dotenv.load
+Dotenv.load   #loads configuration from .env file
 
 set port: 3001
 configure :production do
@@ -19,13 +20,24 @@ configure :production do
 end
 
 $BUCKET = ENV['BUCKET'] # bucket cannot be uppercase
-$AWS_SECRET = ENV['AWS_SECRET_ACCESS_KEY']    #todo: get this from aaron
+$AWS_SECRET = ENV['AWS_SECRET_ACCESS_KEY']
 $AWS_ACCESS_KEY_ID = ENV['AWS_ACCESS_KEY_ID']
 $IV = 'T\xE0\xAEW<mUi\xE3\x93q\xB2\t\x9C\xA0\x88' #using a constant IV even though it is less secure because we have no database to store a per-upload IV in
 $CIPHER = 'AES-128-CBC'
+$LOCAL_SUBNETS = ENV['LOCAL_SUBNETS'].split(',').map{|local_subnet| IP::CIDR.new(local_subnet.strip)}
+
+def local_request?(request_ip)
+  addr = IP::Address::Util.string_to_ip(request_ip)
+  $LOCAL_SUBNETS.any?{|local_subnet| local_subnet.includes?(addr)}
+end
 
 get '/' do
-  haml :index
+  pass unless local_request?(request.ip)
+  haml :internal_index
+end
+
+get '/' do
+  haml :external_index
 end
 
 get '/uploads/new' do
@@ -114,16 +126,18 @@ end
 
 def send_email(address, html)
   Pony.mail to: address,
-            via: :smtp,
-            subject: 'NEB File Uplaoder: Upload Ready',
-            via_options: {
-                address:               'relay.neb.com',
-                port:                  '587',
-                enable_starttls_auto:  true,
-                #user_name:             ENV['EMAIL_ADDRESS'],
-                #password:              ENV['EMAIL_PASSWORD'],
-                #authentication:        :plain, # :plain, :login, :cram_md5, no auth by default
-                domain:                "uploads.neb.com" # the HELO domain provided by the client to the server
-            },
+            subject: 'NEB File Uploader: Ready to receive your files',
+            from: 'NEB File Upload Service <uploads-admin@neb.com>',
+            #via: :smtp,
+            # via_options: {
+            #     address:               'relay.neb.com',
+            #     port:                  '587',
+            #     enable_starttls_auto:  true,
+            #     openssl_verify_mode:   OpenSSL::SSL::VERIFY_NONE,
+            #     #user_name:             ENV['EMAIL_ADDRESS'],
+            #     #password:              ENV['EMAIL_PASSWORD'],
+            #     #authentication:        :plain, # :plain, :login, :cram_md5, no auth by default
+            #     domain:                "uploads.neb.com" # the HELO domain provided by the client to the server
+            # },
             html_body: erb(html)
 end
