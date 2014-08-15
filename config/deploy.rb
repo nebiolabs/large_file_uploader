@@ -5,7 +5,7 @@ set :application, 'file_uploader'
 set :repo_url, 'https://github.com/nebiolabs/large_file_uploader.git'
 set :deploy_to, '/var/www/large_file_uploader'
 
-set :linked_files, ['.env']
+set :linked_files, ['.env','config/newrelic.yml']
 set :keep_releases, 5
 set :branch, :master
 set :log_level, :info
