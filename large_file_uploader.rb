@@ -41,10 +41,12 @@ get '/' do
 end
 
 get '/uploads/new' do
+  pass unless local_request?(request.ip)
   haml :new_upload
 end
 
 post '/uploads' do
+  pass unless local_request?(request.ip)
   time = Time.now
   sender_email = params[:sender_email].downcase
   dest_email = params[:destination_email].downcase
