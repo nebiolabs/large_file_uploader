@@ -23,7 +23,7 @@
   .upload-footer
     %p Confirmation emails will be sent to #{@dest_email} and to #{@sender_email} when the upload is complete.
     %p Your files will be retained for #{@keep_days} days.
-    %p Maximum file size is #{@max_file_size.to_f/(1024 * 1024 * 1024)} GB.
+    %p Maximum file size is #{(@max_file_size.to_f/(1024 * 1024)).round(2)} MB.
 
 %script{:id => "template", :type => "text/template"}
   %tr{:class=> 'upload-{{fileNumber}}'}

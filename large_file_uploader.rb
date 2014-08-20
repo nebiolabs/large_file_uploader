@@ -1,6 +1,3 @@
-
-#set :bind, '0.0.0.0'
-
 require 'bundler/setup'
 require 'sinatra'
 require 'haml'
@@ -11,7 +8,10 @@ require 'dotenv'
 require 'pony'
 require 'aws-sdk'
 require 'ip'
+require 'date'
+require File.expand_path '../lib/upload.rb', __FILE__
 
+#set :bind, '0.0.0.0'
 Dotenv.load   #loads configuration from .env file
 
 set port: 3001
@@ -47,27 +47,10 @@ end
 
 post '/uploads' do
   pass unless local_request?(request.ip)
-  time = Time.now
   sender_email = params[:sender_email].downcase
   dest_email = params[:destination_email].downcase
 
-  source_hash = {
-    dest_email:    dest_email,
-    sender_email:  sender_email,
-    keep_days:     params[:keep_file_days],
-    max_file_size: params[:max_file_size],
-    current_time:  time.strftime('%H%M%S'),
-    current_day:   time.strftime('%Y%m%d')
-  }
-  source_string = source_hash.map{|k,v| "#{k}:#{v}"}.join(';')
-
-  cipher = OpenSSL::Cipher.new $CIPHER
-  cipher.encrypt
-  cipher.key = $AWS_SECRET
-  cipher.iv = $IV
-  encrypted_string = cipher.update(source_string)+cipher.final
-
-  @upload_key = Base64.urlsafe_encode64(encrypted_string)
+  @upload_key =  Upload.new(dest_email, sender_email, DateTime.now, params[:allow_upload_days].to_i, params[:keep_file_days].to_i, params[:max_file_size].to_i).encode
   send_email(sender_email, :initiation)
   send_email(dest_email, :initiation)
 
@@ -75,29 +58,33 @@ post '/uploads' do
   {upload_key: @upload_key}.to_json
 end
 
-get '/send/:upload_key' do |upload_key|
-  upload_string = Base64.urlsafe_decode64(upload_key)
+get '/send/:upload_key' do |encoded_key|
 
-  decipher = OpenSSL::Cipher.new $CIPHER
-  decipher.decrypt
-  decipher.key = $AWS_SECRET
-  decipher.iv = $IV
-  plain = decipher.update(upload_string) + decipher.final
+  upload = Upload.decode(encoded_key)
 
-  plain_hash =  plain.split(';').inject(Hash.new){|hsh,elem| k,v = elem.split(':'); hsh[k.to_sym] = v; hsh}
+  if upload.link_expired?
+    haml :link_expired
+  elsif upload.link_invalid?
+    haml :link_invalid
+  else #valid upload link continue to show the upload form
 
-  @keep_days = plain_hash[:keep_days].to_i
-  @sender_email = plain_hash[:sender_email]
-  @dest_email = plain_hash[:dest_email]
-  @max_file_size = plain_hash[:max_file_size]
+    @keep_days = upload.keep_days
+    @sender_email = upload.sender_email
+    @dest_email = upload.dest_email
+    @max_file_size = upload.max_file_size
 
-  ###
-  @folder_name = "nebupload_#{@sender_email}_#{plain_hash[:current_day]}_#{plain_hash[:current_time]}"
-  s3 = AWS::S3.new
-  @bucket = s3.buckets[$BUCKET]
-  update_folder_expiration unless bucket_rule_exists?
-
-  haml :send
+    ###
+    @folder_name = "nebupload_#{@sender_email}_#{upload.creation_day}_#{upload.creation_time}"
+    s3 = AWS::S3.new
+    @bucket = s3.buckets[$BUCKET]
+    begin
+      update_folder_expiration unless bucket_rule_exists?
+      haml :send
+    rescue => e
+      logger.error e
+      haml :link_invalid
+    end
+  end
 end
 
 post '/notifications/:folder_name/:sender_email/:dest_email' do
@@ -143,3 +130,4 @@ def send_email(address, html)
             # },
             html_body: erb(html)
 end
+
