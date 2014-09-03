@@ -21,7 +21,7 @@
           %option{value: 1024 * 1024 * 1024 * 1024} 1TB
 
 
-      %input#submit{type: "submit", value: "Send email"}
+      %input#submit.btn{type: "submit", value: "Send email"}
 
 
       %label
@@ -37,6 +37,7 @@
 
     var $clippyEl = $('.clippy');
     var $submitButtonEl = $("#submit");
+    var $formEl = $("#signup");
     var $uploadInputEl = $('#upload_key');
     $clippyEl.clippy();
 
@@ -46,23 +47,25 @@
       )
     });
 
-    $("#signup").submit(function(e) {
-        e.preventDefault();
-        $submitButtonEl.val('Sending email...');
-        var form_data = $(this).serialize();
-        $.ajax({
-            url: '/uploads',
-            type: 'POST',
-            data: form_data,
-            success: function(data){
-              $submitButtonEl.val('Email sucessfully sent')
-              $uploadInputEl.val(data.upload_key);
-              $clippyEl.clippy({text: data.upload_key})
-            },
-            fail: function(){
-              $submitButtonEl.val('Email failed to send')
-            }
-        });
+    $formEl.bind( "submit", function(e) {
+      e.preventDefault();
+      $submitButtonEl.val('Sending email...');
+      var form_data = $(this).serialize();
+      $.ajax({
+          url: '/uploads',
+          type: 'POST',
+          data: form_data,
+          success: function(data){
+            $submitButtonEl.val('Email sucessfully sent');
+            $submitButtonEl.addClass('disabled');
+            $formEl.unbind("submit");
+            $uploadInputEl.val(data.upload_key);
+            $clippyEl.clippy({text: data.upload_key});
+          },
+          fail: function(){
+            $submitButtonEl.val('Email failed to send');
+          }
+      });
     });
   });
 
