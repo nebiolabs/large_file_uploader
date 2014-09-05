@@ -23,10 +23,12 @@
 
       %input#submit.btn{type: "submit", value: "Send email"}
 
-
       %label
-        Upload Key :
-        %input#upload_key{type: "text", value: "Not created yet"}
+        Upload Link:
+        %a#upload_link{style: 'display: none;'} Click Here
+      %label
+        Copy Upload Key:
+        %input#upload_key{type: "text", value: "Not created yet", hidden: true}
         .clippy
 
 ​
@@ -36,9 +38,10 @@
   $(document).ready(function(){
 
     var $clippyEl = $('.clippy');
-    var $submitButtonEl = $("#submit");
-    var $formEl = $("#signup");
+    var $submitButtonEl = $('#submit');
+    var $formEl = $('#signup');
     var $uploadInputEl = $('#upload_key');
+    var $uploadLink = $('#upload_link');
     $clippyEl.clippy();
 
     $uploadInputEl.on("input", function(){
@@ -56,11 +59,14 @@
           type: 'POST',
           data: form_data,
           success: function(data){
+            var link = 'https://uploads.neb.com/send/' + data.upload_key
             $submitButtonEl.val('Email sucessfully sent');
             $submitButtonEl.addClass('disabled');
+            $uploadLink.toggle();
+            $uploadLink.attr('href', link);
             $formEl.unbind("submit");
-            $uploadInputEl.val(data.upload_key);
-            $clippyEl.clippy({text: data.upload_key});
+            $uploadInputEl.val(link);
+            $clippyEl.clippy({text: link});
           },
           fail: function(){
             $submitButtonEl.val('Email failed to send');
