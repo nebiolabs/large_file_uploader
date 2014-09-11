@@ -63,7 +63,7 @@ function Uploader(config){
   this.initiateMultipartUpload = function(upload){
     var auth = this.encryptAuth(upload.initMultiStr);
     return $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.awsObjURL)+'?uploads',
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.awsObjURL+'?uploads',
       type: 'post',
       dataType: 'xml',
       context: this,
@@ -98,7 +98,7 @@ function Uploader(config){
         xhr.upload.addEventListener("progress", upload.progressHandler);
         return xhr ;
       },
-      url: 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+ encodeURI(upload.awsObjURL),
+      url: 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+ upload.awsObjURL,
       type: 'PUT',
       data: upload.file,
       context: this,
@@ -130,7 +130,7 @@ function Uploader(config){
     var data = this.templateRenderer.renderXML(upload);
 
     $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.awsObjURL)+'?uploadId='+upload.uploadId,
+      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.awsObjURL+'?uploadId='+upload.uploadId,
       type: 'POST',
       dataType: 'xml',
       data: data,
