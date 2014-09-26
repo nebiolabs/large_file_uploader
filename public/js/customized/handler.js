@@ -1,11 +1,15 @@
-function Handler(){
+function Handler(options){
   this.successPartUploadHandler = function(part, jqXHR, callback){
     part.ETag = jqXHR.getResponseHeader('ETag').replace(/"/g, '');
     part.upload.completedParts.push(part);
-    var percent = Math.round((part.upload.completedParts.length / part.upload.totalChunks ) * 100)+'%';
-    part.upload.$status.html(percent);
-    part.upload.$progressBar.width(percent);
 
+    if (part.upload.$progressBar[0]){
+      var percent = Math.round((part.upload.completedParts.length / part.upload.totalChunks ) * 100)+'%';
+      part.upload.$status.html(percent);
+      part.upload.$progressBar.width(percent);
+    }
+
+    this.customSuccessPartHandler();
     if (part.upload.totalChunks === part.upload.completedParts.length){
       callback(part.upload)
     }
@@ -13,8 +17,9 @@ function Handler(){
 
   this.successUploadCompleteHandler = function(uploader, upload){
     uploader.completedUploads.push(upload);
+    this.customSuccessHandler();
     if (uploader.completedUploads.length === uploader.uploadQueue.length){
-      uploader.sendCompletionEmail();
+      this.allUploadsFinishedHandler();
       uploader.completedUploads = [];
     }
   };
@@ -32,5 +37,13 @@ function Handler(){
     })
   };
 
-  _.bindAll(this, "successPartUploadHandler", "successUploadCompleteHandler", "multiPartFailUploadHandler");
+  this.customSuccessPartHandler = function(){};
+
+  this.allUploadsFinishedHandler = function(){};
+
+  this.customSuccessHandler = function(){};
+
+  $.extend(this, options);
+
+  _.bindAll(this, "successPartUploadHandler", "successUploadCompleteHandler", "multiPartFailUploadHandler", "allUploadsFinishedHandler");
 }

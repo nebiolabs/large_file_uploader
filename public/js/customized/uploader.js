@@ -1,12 +1,13 @@
 //ConfigurationRetriever: fetches the configuration for submission
 //Configuration model: abstraction to reflect the bucket, accessKey, etc
-function Uploader(config){
+
+function Uploader(config, handlerOptions){
 
   //add check for html5
   this.config           = config;
   this.templateRenderer = new TemplateRenderer('#template');
   this.uploadForm       = new UploaderForm('.upload-form');
-  this.handler          = new Handler();
+  this.handler          = new Handler(handlerOptions);
   this.uploadQueue      = [];
   this.completedUploads = [];
   this.uploadCounter    = 0;
@@ -185,19 +186,13 @@ function Uploader(config){
     return 'AWS'+' '+this.config.accessKey+':'+crypto
   };
 
-  this.sendCompletionEmail = function(){
-    $.ajax({
-      url: '/notifications/' + encodeURI(this.config.folderName) +'/'+ encodeURI(this.config.senderEmail) +'/'+ encodeURI(this.config.destEmail),
-      type: 'POST',
-      dataType: 'json'
-    })
-  };
 
   _.bindAll(this, "sendPartToAmazon", "removeUpload", "addUploadToView", "createUpload");
   _.bindAll(this, "getFile", "startUploads", "initiateMultipartUpload", "sendFullFileToAmazon");
-  _.bindAll(this, "encryptAuth", "uploadParts", "completeMultipart", "sendCompletionEmail");
+  _.bindAll(this, "encryptAuth", "uploadParts", "completeMultipart");
 
   this.uploadForm.$fileInput.on('change', this.getFile);
   this.uploadForm.$container.on('drop', this.getFile);
   this.uploadForm.$el.on('submit', this.startUploads);
+
 }

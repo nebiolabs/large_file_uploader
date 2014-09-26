@@ -56,6 +56,18 @@
 
 :javascript
   $( document ).ready(function() {
-    config = new Config(#{@max_file_size}, '#{$BUCKET}', '#{$AWS_ACCESS_KEY_ID}', '#{$AWS_SECRET}', '#{@sender_email}', '#{@dest_email}', '#{@folder_name}')
-    new Uploader(config);
+
+    var handlerOptions = {
+      allUploadsFinishedHandler: function(){
+        $.ajax({
+          url: '/notifications/' + '#{@folder_name}' +'/'+ '#{@sender_email}' +'/'+ '#{@dest_email}',
+          type: 'POST',
+          context: this,
+          dataType: 'json'
+        })
+      }
+    }
+
+    config = new Config(#{@max_file_size}, '#{$BUCKET}', '#{$AWS_ACCESS_KEY_ID}', '#{$AWS_SECRET}', '#{@folder_name}')
+    new Uploader(config, handlerOptions);
   });
