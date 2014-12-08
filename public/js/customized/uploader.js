@@ -5,8 +5,8 @@ function Uploader(config, handlerOptions){
 
   //add check for html5
   this.config           = config;
-  this.templateRenderer = new TemplateRenderer('#template');
-  this.uploadForm       = new UploaderForm('.upload-form');
+  this.templateRenderer = new TemplateRenderer('#upload-template');
+  this.uploadForm       = new UploaderForm('#upload-form');
   this.handler          = new Handler(handlerOptions);
   this.uploadQueue      = [];
   this.completedUploads = [];

@@ -2,7 +2,7 @@
   %h4.mbm
     %p.upload-header Drag & Drop a File
     .upload-subheader Or select an option below
-  %form.upload-form
+  %form#upload-form
     .row.mbm
       %span.btn.btn-success.fileinput-button.custom-button
         %i.fa.fa-plus.fa-4x.mtrs
@@ -25,7 +25,7 @@
     %p Your files will be retained for #{@keep_days} days.
     %p Maximum file size is #{(@max_file_size.to_f/(1024 * 1024)).round(2)} MB.
 
-%script{:id => "template", :type => "text/template"}
+%script{:id => "upload-template", :type => "text/template"}
   %tr{:class=> 'upload-{{fileNumber}}'}
     %td.col-md-2 {{ file.name }}
     %td.col-md-1 {{ (file.size/1024/1024).toFixed(2) }} MB
@@ -35,7 +35,7 @@
           %span.sr-only
           %span.status
     %td
-      %span.btn.btn-danger
+      %span.btn.btn-danger.delete-upload
         %i.fa.fa-times
 
 %script{src: "/js/underscore.js"}

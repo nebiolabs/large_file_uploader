@@ -1,6 +1,6 @@
 function Upload(el, file, config){
   this.$el              = $(el);
-  this.$deleteButton    = this.$el.find('.btn-danger');
+  this.$deleteButton    = this.$el.find('.delete-upload');
   this.$progressBar     = this.$el.find('.progress-bar');
   this.$status          = this.$el.find('.status');
   this.file             = file;
