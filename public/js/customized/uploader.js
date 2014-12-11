@@ -31,7 +31,11 @@ function Uploader(config, handlerOptions){
         alert('THIS FILE IS TOO LARGE')
       } else {
         this.addUploadToView(fileNumber, file);
-        this.createUpload(fileNumber, file);
+
+        //can't create all uploads
+//        if(this.uploadQueue.length > 8){
+          this.createUpload(fileNumber, file);
+//        }
       }
     }
   };
@@ -62,14 +66,15 @@ function Uploader(config, handlerOptions){
   };
 
   this.initiateMultipartUpload = function(upload){
-    var auth = this.encryptAuth(upload.initMultiStr);
+    var signer = new Signer(upload);
+    var auth = this.encryptAuth(signer.initMultiStr);
     return $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.awsObjURL+'?uploads',
+      url : signer.multipartInitURL,
       type: 'post',
       dataType: 'xml',
       context: this,
       beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", upload.date);
+        xhr.setRequestHeader("x-amz-date", signer.date);
         xhr.setRequestHeader("Authorization", auth);
       },
       success: function(data) {
@@ -80,33 +85,22 @@ function Uploader(config, handlerOptions){
   };
 
   this.sendFullFileToAmazon = function(upload){
-    //todo: abstract to AmazonFormPayload
-//    var fd = new FormData();
-//    fd.append('key',            upload.file.name);
-//    fd.append('AWSAccessKeyId', this.accessKey);
-//    fd.append('acl',            this.acl);
-//    fd.append('file',           upload.file);
-
-    //todo: abstract to AmazonUpload
-//    var payload = new AmazonFormPayload(amazonFile, configuration);
-//    var uploader = new AmazonFormUpload()
-//    uploader.upload();
-
-    var auth = this.encryptAuth(upload.initSingleStr);
+    var signer = new Signer(upload);
+    var auth = this.encryptAuth(signer.initSingleStr);
     $.ajax({
       xhr: function(){
         var xhr = $.ajaxSettings.xhr() ;
         xhr.upload.addEventListener("progress", upload.progressHandler);
         return xhr ;
       },
-      url: 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+ upload.awsObjURL,
+      url: signer.singlepartInitURL,
       type: 'PUT',
       data: upload.file,
       context: this,
       contentType:'multipart/form-data',
       processData: false,
       beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", upload.date);
+        xhr.setRequestHeader("x-amz-date", signer.date);
         xhr.setRequestHeader("Authorization", auth);
       },
       success: function() {
@@ -127,18 +121,19 @@ function Uploader(config, handlerOptions){
   };
 
   this.completeMultipart = function(upload){
-    var auth = this.encryptAuth(upload.finishMultiStr());
+    var signer = new Signer(upload);
+    var auth = this.encryptAuth(signer.finishMultiStr());
     var data = this.templateRenderer.renderXML(upload);
 
     $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.awsObjURL+'?uploadId='+upload.uploadId,
+      url : signer.partUploadURL,
       type: 'POST',
       dataType: 'xml',
       data: data,
       contentType: false,
       context: this,
       beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", upload.date);
+        xhr.setRequestHeader("x-amz-date", signer.date);
         xhr.setRequestHeader("Authorization", auth);
       },
       success: function() {
@@ -151,17 +146,18 @@ function Uploader(config, handlerOptions){
   };
 
   this.sendPartToAmazon = function(part){
-    var auth = this.encryptAuth(part.stringToSign());
+    var signer = new Signer(part.upload);
+    var auth = this.encryptAuth(signer.stringToSign(part));
 
     $.ajax({
-      url: part.url(),
+      url: signer.partURL(part),
       type: 'PUT',
       dataType: 'xml',
       data: part.blob,
       contentType:'multipart/form-data',
       processData: false,
       beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", part.upload.date);
+        xhr.setRequestHeader("x-amz-date", signer.date);
         xhr.setRequestHeader("Authorization", auth);
       },
       context: this,
