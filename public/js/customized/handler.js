@@ -1,4 +1,6 @@
-function Handler(options){
+function Handler(uploader, options){
+  this.uploader = uploader;
+
   this.successPartUploadHandler = function(part, jqXHR, callback){
     part.ETag = jqXHR.getResponseHeader('ETag').replace(/"/g, '');
     part.upload.completedParts.push(part);
@@ -15,14 +17,45 @@ function Handler(options){
     }
   };
 
-  this.successUploadCompleteHandler = function(uploader, upload){
-    uploader.completedUploads.push(upload);
+  this.successUploadCompleteHandler = function(upload){
+    this.uploader.completedUploads.push(upload);
     this.customSuccessHandler();
-    if (uploader.completedUploads.length === uploader.uploadQueue.length){
+    if (this.uploader.completedUploads.length === this.uploader.uploadQueue.length){
       this.allUploadsFinishedHandler();
-      uploader.completedUploads = [];
+      this.uploader.completedUploads = [];
     }
   };
+
+  // two types of uploads, so callback needs to be passed in
+  this.initUploadFailureHandler = function(upload, callback){
+    upload.startUploads += 1;
+    if(upload.startRetries < 4)
+    {
+      callback(upload);
+    }
+    else
+    {
+      upload.uploadFailed();
+      console.log('Upload' + ' ' + upload.file.name + ' has failed to start uploading')
+    }
+  };
+
+  this.partUploadFailure = function(part){
+    part.retries += 1;
+    if(part.retries < 4)
+    {
+      this.uploader.sendPartToAmazon(part);
+      console.log('Upload'+' '+part.upload.file.name+' part '+part.partNumber+' has failed to start uploading and is retrying')
+    }
+    else
+    {
+      this.multiPartFailUploadHandler(part.upload);
+      console.log('Upload'+' '+part.upload.file.name+' part '+part.partNumber+' has failed to start uploading 3 times');
+      part.upload.uploadFailed();
+      console.log('Upload' + ' ' + part.upload.file.name + ' has failed to start uploading')
+    }
+  };
+
 
   this.multiPartFailUploadHandler = function(upload){
     var auth = this.encryptAuth(upload.abortStr());

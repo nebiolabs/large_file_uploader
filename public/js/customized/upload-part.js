@@ -6,4 +6,6 @@ function UploadPart(file, partNumber, upload) {
   this.endByte = this.upload.config.multipartMinSize * (partNumber);
   this.blob = this.file.slice(this.startByte, this.endByte);
   this.ETag = '';
+
+  this.retries = 0;
 }

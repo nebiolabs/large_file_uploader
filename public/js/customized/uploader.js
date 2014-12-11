@@ -7,7 +7,7 @@ function Uploader(config, handlerOptions){
   this.config           = config;
   this.templateRenderer = new TemplateRenderer('#upload-template');
   this.uploadForm       = new UploaderForm('#upload-form');
-  this.handler          = new Handler(handlerOptions);
+  this.handler          = new Handler(this, handlerOptions);
   this.uploadQueue      = [];
   this.completedUploads = [];
   this.uploadCounter    = 0;
@@ -31,11 +31,7 @@ function Uploader(config, handlerOptions){
         alert('THIS FILE IS TOO LARGE')
       } else {
         this.addUploadToView(fileNumber, file);
-
-        //can't create all uploads
-//        if(this.uploadQueue.length > 8){
-          this.createUpload(fileNumber, file);
-//        }
+        this.createUpload(fileNumber, file);
       }
     }
   };
@@ -80,6 +76,9 @@ function Uploader(config, handlerOptions){
       success: function(data) {
         upload.uploadId = data.getElementsByTagName("UploadId")[0].innerHTML;
         this.uploadParts(upload);
+      },
+      error: function(){
+        this.handler.initUploadFailureHandler(upload, this.initiateMultipartUpload)
       }
     });
   };
@@ -104,20 +103,27 @@ function Uploader(config, handlerOptions){
         xhr.setRequestHeader("Authorization", auth);
       },
       success: function() {
-        this.handler.successUploadCompleteHandler(this, upload)
+        this.handler.successUploadCompleteHandler(upload)
       },
-      fail: function(){
-        upload.uploadFailed();
+      error: function(){
+        this.handler.initUploadFailureHandler(upload, this.sendFullFileToAmazon);
       }
     })
   };
 
   this.uploadParts = function(upload){
     for(var partNumber=1; partNumber <= upload.totalChunks; partNumber++){
+      this.timedUploadPart(partNumber, upload);
+    }
+  };
+
+  this.timedUploadPart = function(partNumber, upload){
+    var uploader = this;
+    setTimeout(function(){
       var part = new UploadPart(upload.file, partNumber, upload);
       upload.parts.push(part);
-      this.sendPartToAmazon(part);
-    }
+      uploader.sendPartToAmazon(part);
+    }, 5000 * partNumber);
   };
 
   this.completeMultipart = function(upload){
@@ -137,9 +143,9 @@ function Uploader(config, handlerOptions){
         xhr.setRequestHeader("Authorization", auth);
       },
       success: function() {
-        this.handler.successUploadCompleteHandler(this, upload)
+        this.handler.successUploadCompleteHandler(upload)
       },
-      fail: function() {
+      error: function() {
         this.handler.multiPartFailUploadHandler(upload)
       }
     })
@@ -164,8 +170,8 @@ function Uploader(config, handlerOptions){
       success: function(data, textStatus, jqXHR) {
         this.handler.successPartUploadHandler(part, jqXHR, this.completeMultipart)
       },
-      fail: function() {
-        this.handler.multiPartFailUploadHandler(part.upload)
+      error: function() {
+        this.handler.partUploadFailure(part)
       }
     })
   };
@@ -185,7 +191,7 @@ function Uploader(config, handlerOptions){
 
   _.bindAll(this, "sendPartToAmazon", "removeUpload", "addUploadToView", "createUpload");
   _.bindAll(this, "getFile", "startUploads", "initiateMultipartUpload", "sendFullFileToAmazon");
-  _.bindAll(this, "encryptAuth", "uploadParts", "completeMultipart");
+  _.bindAll(this, "encryptAuth", "uploadParts", "timedUploadPart", "completeMultipart");
 
   this.uploadForm.$fileInput.on('change', this.getFile);
   this.uploadForm.$container.on('drop', this.getFile);

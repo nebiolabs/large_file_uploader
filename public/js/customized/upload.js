@@ -10,6 +10,7 @@ function Upload(el, file, config){
   this.totalChunks      = Math.ceil(this.file.size / this.config.multipartMinSize);
   this.canUseMultipart  = this.file.size > this.config.multipartMinSize;
   this.completedParts   = [];
+  this.startRetries     = 0;
 
   this.progressHandler = function(e){
     var percent = Math.round((e.loaded / e.total) * 100)+'%';
