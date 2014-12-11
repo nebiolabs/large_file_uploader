@@ -28,10 +28,12 @@ function Handler(uploader, options){
 
   // two types of uploads, so callback needs to be passed in
   this.initUploadFailureHandler = function(upload, callback){
-    upload.startUploads += 1;
-    if(upload.startRetries < 4)
+    upload.retries += 1;
+    if(upload.retries < 4)
     {
-      callback(upload);
+      setTimeout(function() {
+        callback(upload);
+      }, 2000);
     }
     else
     {
@@ -41,10 +43,14 @@ function Handler(uploader, options){
   };
 
   this.partUploadFailure = function(part){
+    var uploader = this.uploader;
     part.retries += 1;
     if(part.retries < 4)
     {
-      this.uploader.sendPartToAmazon(part);
+      setTimeout(function() {
+        uploader.sendPartToAmazon(part);
+      }, 2000);
+
       console.log('Upload'+' '+part.upload.file.name+' part '+part.partNumber+' has failed to start uploading and is retrying')
     }
     else
@@ -58,16 +64,27 @@ function Handler(uploader, options){
 
 
   this.multiPartFailUploadHandler = function(upload){
-    var auth = this.encryptAuth(upload.abortStr());
-    upload.uploadFailed();
-    $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.awsObjURL)+'?uploadId='+upload.uploadId,
-      type: 'DELETE',
-      beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", upload.date);
-        xhr.setRequestHeader("Authorization", auth);
-      }
-    })
+    upload.retries += 1;
+    if(upload.retries < 4)
+    {
+      setTimeout(function() {
+        this.completeMultipart(upload);
+      }, 2000);
+    }
+    else
+    {
+      var auth = this.encryptAuth(upload.abortStr());
+      $.ajax({
+        url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+encodeURI(upload.awsObjURL)+'?uploadId='+upload.uploadId,
+        type: 'DELETE',
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader("x-amz-date", upload.date);
+          xhr.setRequestHeader("Authorization", auth);
+        }
+      });
+      upload.uploadFailed();
+      console.log('Upload' + ' ' + upload.file.name + ' multipart upload did not combine')
+    }
   };
 
   this.customSuccessPartHandler = function(){};
