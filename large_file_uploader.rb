@@ -59,7 +59,6 @@ post '/uploads' do
 end
 
 get '/send/:upload_key' do |encoded_key|
-
   upload = Upload.decode(encoded_key)
 
   if upload.link_expired?

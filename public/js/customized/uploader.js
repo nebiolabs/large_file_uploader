@@ -1,12 +1,13 @@
 //ConfigurationRetriever: fetches the configuration for submission
 //Configuration model: abstraction to reflect the bucket, accessKey, etc
-function Uploader(config){
+
+function Uploader(config, handlerOptions){
 
   //add check for html5
   this.config           = config;
-  this.templateRenderer = new TemplateRenderer('#template');
-  this.uploadForm       = new UploaderForm('.upload-form');
-  this.handler          = new Handler();
+  this.templateRenderer = new TemplateRenderer('#upload-template');
+  this.uploadForm       = new UploaderForm('#upload-form');
+  this.handler          = new Handler(this, handlerOptions);
   this.uploadQueue      = [];
   this.completedUploads = [];
   this.uploadCounter    = 0;
@@ -61,114 +62,116 @@ function Uploader(config){
   };
 
   this.initiateMultipartUpload = function(upload){
-    var auth = this.encryptAuth(upload.initMultiStr);
+    var signer = new Signer(upload);
+    var auth = signer.encryptAuth(signer.initMultiStr);
     return $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.awsObjURL+'?uploads',
+      url : signer.multipartInitURL,
       type: 'post',
       dataType: 'xml',
       context: this,
       beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", upload.date);
+        xhr.setRequestHeader("x-amz-date", signer.date);
         xhr.setRequestHeader("Authorization", auth);
       },
       success: function(data) {
         upload.uploadId = data.getElementsByTagName("UploadId")[0].innerHTML;
         this.uploadParts(upload);
+      },
+      error: function(){
+        this.handler.initUploadFailureHandler(upload, this.initiateMultipartUpload)
       }
     });
   };
 
   this.sendFullFileToAmazon = function(upload){
-    //todo: abstract to AmazonFormPayload
-//    var fd = new FormData();
-//    fd.append('key',            upload.file.name);
-//    fd.append('AWSAccessKeyId', this.accessKey);
-//    fd.append('acl',            this.acl);
-//    fd.append('file',           upload.file);
-
-    //todo: abstract to AmazonUpload
-//    var payload = new AmazonFormPayload(amazonFile, configuration);
-//    var uploader = new AmazonFormUpload()
-//    uploader.upload();
-
-    var auth = this.encryptAuth(upload.initSingleStr);
+    var signer = new Signer(upload);
+    var auth = signer.encryptAuth(signer.initSingleStr);
     $.ajax({
       xhr: function(){
         var xhr = $.ajaxSettings.xhr() ;
         xhr.upload.addEventListener("progress", upload.progressHandler);
         return xhr ;
       },
-      url: 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+ upload.awsObjURL,
+      url: signer.singlepartInitURL,
       type: 'PUT',
       data: upload.file,
       context: this,
       contentType:'multipart/form-data',
       processData: false,
       beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", upload.date);
+        xhr.setRequestHeader("x-amz-date", signer.date);
         xhr.setRequestHeader("Authorization", auth);
       },
       success: function() {
-        this.handler.successUploadCompleteHandler(this, upload)
+        this.handler.successUploadCompleteHandler(upload)
       },
-      fail: function(){
-        upload.uploadFailed();
+      error: function(){
+        this.handler.initUploadFailureHandler(upload, this.sendFullFileToAmazon);
       }
     })
   };
 
   this.uploadParts = function(upload){
     for(var partNumber=1; partNumber <= upload.totalChunks; partNumber++){
-      var part = new UploadPart(upload.file, partNumber, upload);
-      upload.parts.push(part);
-      this.sendPartToAmazon(part);
+      this.timedUploadPart(partNumber, upload);
     }
   };
 
+  this.timedUploadPart = function(partNumber, upload){
+    var uploader = this;
+    setTimeout(function(){
+      var part = new UploadPart(upload.file, partNumber, upload);
+      upload.parts.push(part);
+      uploader.sendPartToAmazon(part);
+    }, 5000 * partNumber);
+  };
+
   this.completeMultipart = function(upload){
-    var auth = this.encryptAuth(upload.finishMultiStr());
+    var signer = new Signer(upload);
+    var auth = signer.encryptAuth(signer.finishMultiStr());
     var data = this.templateRenderer.renderXML(upload);
 
     $.ajax({
-      url : 'https://' + upload.config.bucket + '.s3.amazonaws.com/'+upload.awsObjURL+'?uploadId='+upload.uploadId,
+      url : signer.partUploadURL,
       type: 'POST',
       dataType: 'xml',
       data: data,
       contentType: false,
       context: this,
       beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", upload.date);
+        xhr.setRequestHeader("x-amz-date", signer.date);
         xhr.setRequestHeader("Authorization", auth);
       },
       success: function() {
-        this.handler.successUploadCompleteHandler(this, upload)
+        this.handler.successUploadCompleteHandler(upload)
       },
-      fail: function() {
+      error: function() {
         this.handler.multiPartFailUploadHandler(upload)
       }
     })
   };
 
   this.sendPartToAmazon = function(part){
-    var auth = this.encryptAuth(part.stringToSign());
+    var signer = new Signer(part.upload);
+    var auth = signer.encryptAuth(signer.partStr(part));
 
     $.ajax({
-      url: part.url(),
+      url: signer.partURL(part),
       type: 'PUT',
       dataType: 'xml',
       data: part.blob,
       contentType:'multipart/form-data',
       processData: false,
       beforeSend: function (xhr) {
-        xhr.setRequestHeader("x-amz-date", part.upload.date);
+        xhr.setRequestHeader("x-amz-date", signer.date);
         xhr.setRequestHeader("Authorization", auth);
       },
       context: this,
       success: function(data, textStatus, jqXHR) {
         this.handler.successPartUploadHandler(part, jqXHR, this.completeMultipart)
       },
-      fail: function() {
-        this.handler.multiPartFailUploadHandler(part.upload)
+      error: function() {
+        this.handler.partUploadFailure(part)
       }
     })
   };
@@ -180,24 +183,12 @@ function Uploader(config){
     this.uploadQueue = _.without(this.uploadQueue, upload)
   };
 
-  this.encryptAuth = function(stringToSign){
-    var crypto = CryptoJS.HmacSHA1(stringToSign, this.config.secretKey).toString(CryptoJS.enc.Base64);
-    return 'AWS'+' '+this.config.accessKey+':'+crypto
-  };
-
-  this.sendCompletionEmail = function(){
-    $.ajax({
-      url: '/notifications/' + encodeURI(this.config.folderName) +'/'+ encodeURI(this.config.senderEmail) +'/'+ encodeURI(this.config.destEmail),
-      type: 'POST',
-      dataType: 'json'
-    })
-  };
-
   _.bindAll(this, "sendPartToAmazon", "removeUpload", "addUploadToView", "createUpload");
   _.bindAll(this, "getFile", "startUploads", "initiateMultipartUpload", "sendFullFileToAmazon");
-  _.bindAll(this, "encryptAuth", "uploadParts", "completeMultipart", "sendCompletionEmail");
+  _.bindAll(this, "uploadParts", "timedUploadPart", "completeMultipart");
 
   this.uploadForm.$fileInput.on('change', this.getFile);
   this.uploadForm.$container.on('drop', this.getFile);
   this.uploadForm.$el.on('submit', this.startUploads);
+
 }

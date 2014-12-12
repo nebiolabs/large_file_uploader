@@ -2,7 +2,7 @@
   %h4.mbm
     %p.upload-header Drag & Drop a File
     .upload-subheader Or select an option below
-  %form.upload-form
+  %form#upload-form
     .row.mbm
       %span.btn.btn-success.fileinput-button.custom-button
         %i.fa.fa-plus.fa-4x.mtrs
@@ -25,7 +25,7 @@
     %p Your files will be retained for #{@keep_days} days.
     %p Maximum file size is #{(@max_file_size.to_f/(1024 * 1024)).round(2)} MB.
 
-%script{:id => "template", :type => "text/template"}
+%script{:id => "upload-template", :type => "text/template"}
   %tr{:class=> 'upload-{{fileNumber}}'}
     %td.col-md-2 {{ file.name }}
     %td.col-md-1 {{ (file.size/1024/1024).toFixed(2) }} MB
@@ -35,7 +35,7 @@
           %span.sr-only
           %span.status
     %td
-      %span.btn.btn-danger
+      %span.btn.btn-danger.delete-upload
         %i.fa.fa-times
 
 %script{src: "/js/underscore.js"}
@@ -46,6 +46,7 @@
 %script{src: "/js/customized/template-renderer.js"}
 %script{src: "/js/customized/handler.js"}
 %script{src: "/js/customized/uploader-form.js"}
+%script{src: "/js/customized/signer.js"}
 %script{src: "/js/customized/upload.js"}
 %script{src: "/js/customized/upload-part.js"}
 %script{src: "/js/customized/uploader.js"}
@@ -56,6 +57,18 @@
 
 :javascript
   $( document ).ready(function() {
-    config = new Config(#{@max_file_size}, '#{$BUCKET}', '#{$AWS_ACCESS_KEY_ID}', '#{$AWS_SECRET}', '#{@sender_email}', '#{@dest_email}', '#{@folder_name}')
-    new Uploader(config);
+
+    var handlerOptions = {
+      allUploadsFinishedHandler: function(){
+        $.ajax({
+          url: '/notifications/' + '#{@folder_name}' +'/'+ '#{@sender_email}' +'/'+ '#{@dest_email}',
+          type: 'POST',
+          context: this,
+          dataType: 'json'
+        })
+      }
+    }
+
+    config = new Config(#{@max_file_size}, '#{$BUCKET}', '#{$AWS_ACCESS_KEY_ID}', '#{$AWS_SECRET}', '#{@folder_name}')
+    new Uploader(config, handlerOptions);
   });
